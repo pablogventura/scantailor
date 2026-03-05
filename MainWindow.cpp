@@ -19,7 +19,7 @@
 #include "MainWindow.h"
 #include "NewOpenProjectPanel.h"
 #include "RecentProjects.h"
-#include "WorkerThread.h"
+#include "FilterTaskExecutor.h"
 #include "ProjectPages.h"
 #include "PageSequence.h"
 #include "PageSelectionAccessor.h"
@@ -161,7 +161,7 @@ private:
 MainWindow::MainWindow()
 :	m_ptrPages(new ProjectPages),
 	m_ptrStages(new StageSequence(m_ptrPages, newPageSelectionAccessor())),
-	m_ptrWorkerThread(new WorkerThread),
+	m_ptrTaskExecutor(new FilterTaskExecutor(this)),
 	m_ptrInteractiveQueue(new ProcessingTaskQueue(ProcessingTaskQueue::RANDOM_ORDER)),
 	m_ptrOutOfMemoryDialog(new OutOfMemoryDialog),
 	m_curFilter(0),
@@ -229,7 +229,7 @@ MainWindow::MainWindow()
 	);
 	
 	connect(
-		m_ptrWorkerThread.get(),
+		m_ptrTaskExecutor.get(),
 		SIGNAL(taskResult(BackgroundTaskPtr const&, FilterResultPtr const&)),
 		this, SLOT(filterResult(BackgroundTaskPtr const&, FilterResultPtr const&))
 	);
@@ -323,8 +323,6 @@ MainWindow::~MainWindow()
 	if (m_ptrBatchQueue.get()) {
 		m_ptrBatchQueue->cancelAndClear();
 	}
-	m_ptrWorkerThread->shutdown();
-	
 	removeWidgetsFromLayout(m_pImageFrameLayout);
 	removeWidgetsFromLayout(m_pOptionsFrameLayout);
 	m_ptrTabbedDebugImages->clear();
@@ -1204,10 +1202,19 @@ MainWindow::startBatchProcessing()
 	filterList->setBatchProcessingInProgress(true);
 	filterList->setEnabled(false);
 
-	BackgroundTaskPtr const task(m_ptrBatchQueue->takeForProcessing());
-	if (task) {
-		m_ptrWorkerThread->performTask(task);
-	} else {
+	// Submit up to maxParallelTasks() to run in parallel
+	int const maxParallel = FilterTaskExecutor::maxParallelTasks();
+	int submitted = 0;
+	for (int i = 0; i < maxParallel; ++i) {
+		BackgroundTaskPtr const task(m_ptrBatchQueue->takeForProcessing());
+		if (task) {
+			m_ptrTaskExecutor->submitTask(task);
+			++submitted;
+		} else {
+			break;
+		}
+	}
+	if (submitted == 0) {
 		stopBatchProcessing();
 	}
 
@@ -1258,27 +1265,30 @@ MainWindow::filterResult(BackgroundTaskPtr const& task, FilterResultPtr const& r
 	}
 
 	if (task->isCancelled()) {
-		return;
-	}
-	
-	if (!isBatchProcessingInProgress()) {
-		if (!result->filter()) {
-			// Error loading file.  No special action is necessary.
-		} else if (result->filter() != m_ptrStages->filterAt(m_curFilter)) {
-			// Error from one of the previous filters.
-			int const idx = m_ptrStages->findFilter(result->filter());
-			assert(idx >= 0);
-			m_curFilter = idx;
-			
-			ScopedIncDec<int> selection_guard(m_ignoreSelectionChanges);
-			filterList->selectRow(idx);
-		}
+		goto batch_feed_next;
 	}
 
-	// This needs to be done even if batch processing is taking place,
-	// for instance because thumbnail invalidation is done from here.
-	result->updateUI(this);
-	
+	if (result) {
+		if (!isBatchProcessingInProgress()) {
+			if (!result->filter()) {
+				// Error loading file.  No special action is necessary.
+			} else if (result->filter() != m_ptrStages->filterAt(m_curFilter)) {
+				// Error from one of the previous filters.
+				int const idx = m_ptrStages->findFilter(result->filter());
+				assert(idx >= 0);
+				m_curFilter = idx;
+				
+				ScopedIncDec<int> selection_guard(m_ignoreSelectionChanges);
+				filterList->selectRow(idx);
+			}
+		}
+
+		// This needs to be done even if batch processing is taking place,
+		// for instance because thumbnail invalidation is done from here.
+		result->updateUI(this);
+	}
+
+batch_feed_next:
 	if (isBatchProcessingInProgress()) {
 		if (m_ptrBatchQueue->allProcessed()) {
 			stopBatchProcessing();
@@ -1296,9 +1306,9 @@ MainWindow::filterResult(BackgroundTaskPtr const& task, FilterResultPtr const& r
 			return;
 		}
 
-		BackgroundTaskPtr const task(m_ptrBatchQueue->takeForProcessing());
-		if (task) {
-			m_ptrWorkerThread->performTask(task);
+		BackgroundTaskPtr const nextTask(m_ptrBatchQueue->takeForProcessing());
+		if (nextTask) {
+			m_ptrTaskExecutor->submitTask(nextTask);
 		}
 
 		PageInfo const page(m_ptrBatchQueue->selectedPage());
@@ -1783,7 +1793,7 @@ MainWindow::loadPageInteractive(PageInfo const& page)
 	m_ptrInteractiveQueue->addProcessingTask(
 		page, createCompositeTask(page, m_curFilter, /*batch=*/false, m_debug)
 	);
-	m_ptrWorkerThread->performTask(m_ptrInteractiveQueue->takeForProcessing());
+	m_ptrTaskExecutor->submitTask(m_ptrInteractiveQueue->takeForProcessing());
 }
 
 void

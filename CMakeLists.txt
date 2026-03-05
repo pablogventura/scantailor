@@ -475,7 +475,7 @@ SET(
 	ImageLoader.cpp ImageLoader.h
 	ErrorWidget.cpp ErrorWidget.h
 	OrthogonalRotation.cpp OrthogonalRotation.h
-	WorkerThread.cpp WorkerThread.h
+	FilterTaskExecutor.cpp FilterTaskExecutor.h
 	LoadFileTask.cpp LoadFileTask.h
 	FilterOptionsWidget.cpp FilterOptionsWidget.h
 	TaskStatus.h FilterUiInterface.h
