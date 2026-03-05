@@ -89,6 +89,15 @@ private:
 	static void selectVertBorders(imageproc::GrayImage& image);
 	
 	static void buildWeightTable(unsigned weight_table[]);
+	
+	/** Downweight dark central band (spine shadow) so it doesn't dominate Hough. */
+	static imageproc::GrayImage maskSpineShadow(imageproc::GrayImage const& src);
+	
+	/** Find lines at a single DPI; lines are in coordinates of that scaled image. */
+	static std::vector<QLineF> findLinesAtDpi(
+		QImage const& image, ImageTransformation const& xform,
+		int dpi, int max_lines, imageproc::GrayImage* gray_downscaled,
+		QTransform* out_to_downscaled, DebugImages* dbg);
 };
 
 } // namespace page_split

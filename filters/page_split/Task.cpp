@@ -23,6 +23,7 @@
 #include "Settings.h"
 #include "LayoutType.h"
 #include "ProjectPages.h"
+#include "PageSequence.h"
 #include "PageInfo.h"
 #include "PageId.h"
 #include "PageLayoutEstimator.h"
@@ -39,9 +40,11 @@
 #include "ImageView.h"
 #include "FilterUiInterface.h"
 #include "DebugImages.h"
+#include "PageView.h"
 #include <QImage>
 #include <QObject>
 #include <QDebug>
+#include <QLineF>
 #include <memory>
 #include <assert.h>
 
@@ -129,16 +132,38 @@ Task::process(TaskStatus const& status, FilterData const& data)
 	OptionsWidget::UiData ui_data;
 	ui_data.setDependencies(deps);
 
+	double hint_split_x = -1.0;
+	PageSequence const seq(m_ptrPages->toPageSequence(IMAGE_VIEW));
+	for (size_t i = 0; i < seq.numPages(); ++i) {
+		if (seq.pageAt(i).id() == m_pageInfo.id() && i > 0) {
+			Settings::Record prev_record(m_ptrSettings->getPageRecord(seq.pageAt(i - 1).imageId()));
+			Params const* prev_params = prev_record.params();
+			if (prev_params && prev_params->pageLayout().type() == PageLayout::TWO_PAGES
+			    && prev_params->pageLayout().numCutters() >= 1) {
+				QLineF const cut(prev_params->pageLayout().cutterLine(0));
+				QRectF const outline(prev_params->pageLayout().uncutOutline().boundingRect());
+				if (outline.width() > 0) {
+					double const cx = 0.5 * (cut.p1().x() + cut.p2().x());
+					hint_split_x = cx / outline.width();
+					if (hint_split_x < 0.0 || hint_split_x > 1.0) hint_split_x = -1.0;
+				}
+			}
+			break;
+		}
+	}
+
 	for (;;) {
 		Params const* const params = record.params();
 		
 		PageLayout new_layout;
+		double confidence = 0.0;
 		
 		if (!params || !deps.compatibleWith(*params)) {
 			new_layout = PageLayoutEstimator::estimatePageLayout(
 				record.combinedLayoutType(),
 				data.grayImage(), data.xform(),
-				data.bwThreshold(), m_ptrDbg.get()
+				data.bwThreshold(), m_ptrDbg.get(),
+				&confidence, hint_split_x
 			);
 			status.throwIfCancelled();
 		} else if (params->pageLayout().uncutOutline().isEmpty()) {

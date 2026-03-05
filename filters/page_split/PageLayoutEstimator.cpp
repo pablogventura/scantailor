@@ -248,20 +248,25 @@ PageLayoutEstimator::estimatePageLayout(
 	LayoutType const layout_type, QImage const& input,
 	ImageTransformation const& pre_xform,
 	BinaryThreshold const bw_threshold,
-	DebugImages* const dbg)
+	DebugImages* const dbg,
+	double* out_confidence,
+	double hint_split_x)
 {
 	if (layout_type == SINGLE_PAGE_UNCUT) {
+		if (out_confidence) *out_confidence = 1.0;
 		return PageLayout(pre_xform.resultingRect());
 	}
 	
 	std::unique_ptr<PageLayout> layout(
-		tryCutAtFoldingLine(layout_type, input, pre_xform, dbg)
+		tryCutAtFoldingLine(layout_type, input, pre_xform, dbg, out_confidence)
 	);
 	if (layout.get()) {
+		if (out_confidence) *out_confidence = 0.95; // folding line found
 		return *layout;
 	}
 	
-	return cutAtWhitespace(layout_type, input, pre_xform, bw_threshold, dbg);
+	return cutAtWhitespace(layout_type, input, pre_xform, bw_threshold, dbg,
+	                      out_confidence, hint_split_x);
 }
 
 namespace
@@ -307,8 +312,10 @@ private:
 std::unique_ptr<PageLayout>
 PageLayoutEstimator::tryCutAtFoldingLine(
 	LayoutType const layout_type, QImage const& input,
-	ImageTransformation const& pre_xform, DebugImages* const dbg)
+	ImageTransformation const& pre_xform, DebugImages* const dbg,
+	double* out_confidence)
 {
+	if (out_confidence) *out_confidence = 0.0;
 	int const num_pages = numPages(layout_type, pre_xform);
 	
 	GrayImage gray_downscaled;
@@ -397,8 +404,11 @@ PageLayoutEstimator::cutAtWhitespace(
 	LayoutType const layout_type, QImage const& input,
 	ImageTransformation const& pre_xform,
 	BinaryThreshold const bw_threshold,
-	DebugImages* const dbg)
+	DebugImages* const dbg,
+	double* out_confidence,
+	double hint_split_x)
 {
+	if (out_confidence) *out_confidence = 0.0;
 	QTransform xform;
 	
 	// Convert to B/W and rotate.
@@ -459,7 +469,8 @@ PageLayoutEstimator::cutAtWhitespace(
 	PageLayout const layout(
 		cutAtWhitespaceDeskewed150(
 			layout_type, num_pages, img,
-			left_offcut, right_offcut, dbg
+			left_offcut, right_offcut, dbg,
+			out_confidence, hint_split_x
 		)
 	);
 
@@ -489,7 +500,9 @@ PageLayoutEstimator::cutAtWhitespaceDeskewed150(
 	LayoutType const layout_type, int const num_pages,
 	BinaryImage const& input,
 	bool const left_offcut, bool const right_offcut,
-	DebugImages* dbg)
+	DebugImages* dbg,
+	double* out_confidence,
+	double hint_split_x)
 {
 	using namespace boost::lambda;
 	
@@ -530,6 +543,7 @@ PageLayoutEstimator::cutAtWhitespaceDeskewed150(
 	}
 	
 	if (num_pages == 1) {
+		if (out_confidence) *out_confidence = 0.8;
 		return processContentSpansSinglePage(
 			layout_type, spans, width, height,
 			left_offcut, right_offcut
@@ -542,9 +556,11 @@ PageLayoutEstimator::cutAtWhitespaceDeskewed150(
 			visualizeSpans(*dbg, spans, input, "spans_refined");
 		}
 		
-		return processContentSpansTwoPages(
-			layout_type, spans, width, height
+		PageLayout result = processContentSpansTwoPages(
+			layout_type, spans, width, height,
+			&cc_img, hint_split_x, out_confidence
 		);
+		return result;
 	}
 }
 
@@ -783,96 +799,108 @@ PageLayoutEstimator::processContentSpansSinglePage(
 PageLayout
 PageLayoutEstimator::processContentSpansTwoPages(
 	LayoutType const layout_type,
-	std::deque<Span> const& spans, int const width, int const height)
+	std::deque<Span> const& spans, int const width, int const height,
+	BinaryImage const* projection_src, double hint_split_x,
+	double* out_confidence)
 {
 	assert(layout_type == AUTO_LAYOUT_TYPE || layout_type == TWO_PAGES);
+	if (out_confidence) *out_confidence = 0.0;
 
 	QRectF const virtual_image_rect(0, 0, width, height);
 
 	double x;
 	if (spans.empty()) {
 		x = 0.5 * width;
-	} else if (spans.size() == 1) {
-		return processTwoPagesWithSingleSpan(spans.front(), width, height);
-	} else {
-		// GapInfo.first: the amount of content preceding this gap.
-		// GapInfo.second: the amount of content following this gap.
-		typedef std::pair<int, int> GapInfo;
-		
-		std::vector<GapInfo> gaps(spans.size() - 1);
-#if 0
-		int sum = 0;
-		for (unsigned i = 0; i < gaps.size(); ++i) {
-			sum += spans[i].width();
-			gaps[i].first = sum;
-		}
-		sum = 0;
-		for (int i = gaps.size() - 1; i >= 0; --i) {
-			sum += spans[i + 1].width();
-			gaps[i].second = sum;
-		}
-#else
-		int const content_begin = spans.front().begin();
-		int const content_end = spans.back().end();
-		for (unsigned i = 0; i < gaps.size(); ++i) {
-			gaps[i].first = spans[i].end() - content_begin;
-			gaps[i].second = content_end - spans[i + 1].begin();
-		}
-#endif
-		
-		int best_gap = 0;
-		double best_ratio = 0;
-		for (unsigned i = 0; i < gaps.size(); ++i) {
-			double const min = std::min(gaps[i].first, gaps[i].second);
-			double const max = std::max(gaps[i].first, gaps[i].second);
-			double const ratio = min / max;
-			if (ratio > best_ratio) {
-				best_ratio = ratio;
-				best_gap = i;
-			}
-		}
-		
-		if (best_ratio < 0.25) {
-			// Probably one of the pages is just empty.
-			return processTwoPagesWithSingleSpan(
-				Span(content_begin, content_end), width, height
-			);
-		}
-		
-		double const acceptable_ratio = best_ratio * 0.90;
-		
-		int widest_gap = best_gap;
-		int max_width = Span(spans[best_gap], spans[best_gap + 1]).width();
-		for (int i = best_gap - 1; i >= 0; --i) {
-			double const min = std::min(gaps[i].first, gaps[i].second);
-			double const max = std::max(gaps[i].first, gaps[i].second);
-			double const ratio = min / max;
-			if (ratio < acceptable_ratio) {
-				break;
-			}
-			int const width = Span(spans[i], spans[i + 1]).width();
-			if (width > max_width) {
-				max_width = width;
-				widest_gap = i;
-			}
-		}
-		for (unsigned i = best_gap + 1; i < gaps.size(); ++i) {
-			double const min = std::min(gaps[i].first, gaps[i].second);
-			double const max = std::max(gaps[i].first, gaps[i].second);
-			double const ratio = min / max;
-			if (ratio < acceptable_ratio) {
-				break;
-			}
-			int const width = Span(spans[i], spans[i + 1]).width();
-			if (width > max_width) {
-				max_width = width;
-				widest_gap = i;
-			}
-		}
-		
-		Span const gap(spans[widest_gap],  spans[widest_gap + 1]);
-		x = gap.center();
+		if (out_confidence) *out_confidence = 0.3;
+		return PageLayout(virtual_image_rect, vertLine(x));
 	}
+	if (spans.size() == 1) {
+		if (out_confidence) *out_confidence = 0.4;
+		return processTwoPagesWithSingleSpan(spans.front(), width, height);
+	}
+
+	int const content_begin = spans.front().begin();
+	int const content_end = spans.back().end();
+	std::vector<std::pair<int, int> > gaps(spans.size() - 1);
+	for (size_t i = 0; i < gaps.size(); ++i) {
+		gaps[i].first = spans[i].end() - content_begin;
+		gaps[i].second = content_end - spans[i + 1].begin();
+	}
+
+	int best_gap = 0;
+	double best_ratio = 0;
+	for (size_t i = 0; i < gaps.size(); ++i) {
+		double const min_c = std::min(gaps[i].first, gaps[i].second);
+		double const max_c = std::max(gaps[i].first, gaps[i].second);
+		double const ratio = (max_c > 0) ? (min_c / max_c) : 0;
+		if (ratio > best_ratio) {
+			best_ratio = ratio;
+			best_gap = (int)i;
+		}
+	}
+
+	if (best_ratio < 0.25) {
+		if (out_confidence) *out_confidence = 0.2;
+		return processTwoPagesWithSingleSpan(
+			Span(content_begin, content_end), width, height
+		);
+	}
+
+	// Vertical projection for "prefer cut at content minimum" (avoid cutting through text)
+	std::vector<int> projection;
+	bool use_projection = false;
+	if (projection_src && projection_src->width() == width) {
+		int const h = projection_src->height();
+		projection.resize(width, 0);
+		for (int c = 0; c < width; ++c) {
+			projection[c] = projection_src->countBlackPixels(QRect(c, 0, 1, h));
+		}
+		use_projection = true;
+	}
+
+	double const acceptable_ratio = best_ratio * 0.90;
+	double const hint_x = (hint_split_x >= 0.0 && hint_split_x <= 1.0) ? hint_split_x * width : -1.0;
+
+	int chosen_gap = best_gap;
+	double best_score = -1.0;
+
+	for (size_t i = 0; i < gaps.size(); ++i) {
+		double const min_c = std::min(gaps[i].first, gaps[i].second);
+		double const max_c = std::max(gaps[i].first, gaps[i].second);
+		double const ratio = (max_c > 0) ? (min_c / max_c) : 0;
+		if (ratio < acceptable_ratio)
+			continue;
+
+		Span const gap_span(spans[i], spans[i + 1]);
+		double const gap_center = gap_span.center();
+		double score = ratio;
+
+		// Prefer gap at a local minimum of vertical projection (whitespace, not text)
+		if (use_projection && !projection.empty()) {
+			int const c = (int)(gap_center + 0.5);
+			if (c > 0 && c < width - 1) {
+				int const p = projection[c];
+				if (p <= projection[c - 1] && p <= projection[c + 1])
+					score += 0.15;
+			}
+		}
+		// Prefer gap near hint (consistency with previous page)
+		if (hint_x >= 0) {
+			double const dist = std::fabs(gap_center - hint_x);
+			score += std::max(0.0, 0.2 - dist / width);
+		}
+		// Slight preference for wider gaps
+		score += 0.01 * gap_span.width() / (double)width;
+
+		if (score > best_score) {
+			best_score = score;
+			chosen_gap = (int)i;
+		}
+	}
+
+	Span const gap(spans[chosen_gap], spans[chosen_gap + 1]);
+	x = gap.center();
+	if (out_confidence) *out_confidence = best_ratio;
 	return PageLayout(virtual_image_rect, vertLine(x));
 }
 

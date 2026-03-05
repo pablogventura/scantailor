@@ -60,6 +60,8 @@ public:
 	 * \param bw_threshold The global binarization threshold for the
 	 *        input image.
 	 * \param dbg An optional sink for debugging images.
+	 * \param out_confidence Optional; if non-null, set to [0,1] confidence (1 = high).
+	 * \param hint_split_x Optional; if in [0,1], prefer split near this normalized position (for consistency with previous page).
 	 * \return The estimated PageLayout of type consistent with the
 	 *         requested layout type.
 	 */
@@ -67,22 +69,29 @@ public:
 		LayoutType layout_type, QImage const& input,
 		ImageTransformation const& pre_xform,
 		imageproc::BinaryThreshold bw_threshold,
-		DebugImages* dbg = 0);
+		DebugImages* dbg = 0,
+		double* out_confidence = nullptr,
+		double hint_split_x = -1.0);
 private:
 	static std::unique_ptr<PageLayout> tryCutAtFoldingLine(
 		LayoutType layout_type, QImage const& input,
-		ImageTransformation const& pre_xform, DebugImages* dbg);
+		ImageTransformation const& pre_xform, DebugImages* dbg,
+		double* out_confidence = nullptr);
 		
 	static PageLayout cutAtWhitespace(
 		LayoutType layout_type, QImage const& input,
 		ImageTransformation const& pre_xform,
 		imageproc::BinaryThreshold const bw_threshold,
-		DebugImages* dbg);
+		DebugImages* dbg,
+		double* out_confidence = nullptr,
+		double hint_split_x = -1.0);
 	
 	static PageLayout cutAtWhitespaceDeskewed150(
 		LayoutType layout_type, int num_pages,
 		imageproc::BinaryImage const& input,
-		bool left_offcut, bool right_offcut, DebugImages* dbg);
+		bool left_offcut, bool right_offcut, DebugImages* dbg,
+		double* out_confidence = nullptr,
+		double hint_split_x = -1.0);
 	
 	static imageproc::BinaryImage to300DpiBinary(
 		QImage const& img, QTransform& xform,
@@ -110,7 +119,10 @@ private:
 	static PageLayout processContentSpansTwoPages(
 		LayoutType layout_type,
 		std::deque<Span> const& spans,
-		int width, int height);
+		int width, int height,
+		imageproc::BinaryImage const* projection_src = nullptr,
+		double hint_split_x = -1.0,
+		double* out_confidence = nullptr);
 	
 	static PageLayout processTwoPagesWithSingleSpan(
 		Span const& span, int width, int height);
