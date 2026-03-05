@@ -1,0 +1,192 @@
+/* =============================================================================
+   ScanTailor — Estilos 2026 (QSS)
+   Uso: app.setStyleSheet() o qApp->setStyleSheet() con este archivo cargado.
+   Variables de color para mantener consistencia.
+   ============================================================================= */
+
+/* --- Variables (Qt 5.12+ no soporta variables en QSS; usar valores directos) --- */
+/* Fondo app:     #F5F5F6 */
+/* Fondo panel:   #FAFAFA */
+/* Borde:         #E5E5E7 */
+/* Texto:         #1A1A1A */
+/* Texto sec:     #6B6B6B */
+/* Acento:        #2563EB */
+/* Hover:         #E8E8EA */
+
+QMainWindow {
+    background-color: #F5F5F6;
+}
+
+QWidget#centralWidget {
+    background-color: #F5F5F6;
+}
+
+/* --- Toolbar superior --- */
+QWidget#topToolbar {
+    background-color: #FAFAFA;
+    border-bottom: 1px solid #E5E5E7;
+    min-height: 48px;
+}
+
+/* --- Botones de pipeline (etapas) --- */
+QToolButton[pipelineStep="true"] {
+    background-color: transparent;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    color: #6B6B6B;
+    font-size: 13px;
+}
+QToolButton[pipelineStep="true"]:hover {
+    background-color: #E8E8EA;
+    color: #1A1A1A;
+}
+QToolButton[pipelineStep="true"]:checked {
+    background-color: #E0E7FF;
+    color: #2563EB;
+    font-weight: 500;
+}
+
+/* --- Paneles laterales --- */
+QWidget#leftPanel, QWidget#rightPanel {
+    background-color: #FAFAFA;
+    border-radius: 0;
+}
+QScrollArea#paramsScrollArea {
+    background-color: #FAFAFA;
+    border: none;
+    border-left: 1px solid #E5E5E7;
+}
+
+/* --- Panel inferior (batch) --- */
+QWidget#bottomPanel {
+    background-color: #FAFAFA;
+    border-top: 1px solid #E5E5E7;
+    min-height: 56px;
+}
+
+/* --- Botones --- */
+QPushButton {
+    background-color: #F0F0F2;
+    border: 1px solid #E5E5E7;
+    border-radius: 6px;
+    padding: 8px 16px;
+    color: #1A1A1A;
+    min-height: 20px;
+}
+QPushButton:hover {
+    background-color: #E8E8EA;
+    border-color: #D0D0D2;
+}
+QPushButton:pressed {
+    background-color: #D8D8DA;
+}
+QPushButton#primaryButton {
+    background-color: #2563EB;
+    border-color: #2563EB;
+    color: white;
+}
+QPushButton#primaryButton:hover {
+    background-color: #1D4ED8;
+}
+
+/* --- Sliders --- */
+QSlider::groove:horizontal {
+    height: 6px;
+    background: #E5E5E7;
+    border-radius: 3px;
+}
+QSlider::handle:horizontal {
+    width: 16px;
+    height: 16px;
+    margin: -5px 0;
+    background: white;
+    border: 1px solid #E5E5E7;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+}
+QSlider::handle:horizontal:hover {
+    border-color: #2563EB;
+}
+QSlider::sub-page:horizontal {
+    background: #2563EB;
+    border-radius: 3px;
+}
+
+/* --- Inputs --- */
+QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox {
+    background-color: white;
+    border: 1px solid #E5E5E7;
+    border-radius: 6px;
+    padding: 6px 10px;
+    min-height: 20px;
+    color: #1A1A1A;
+}
+QLineEdit:focus, QSpinBox:focus, QComboBox:focus {
+    border-color: #2563EB;
+    outline: none;
+}
+QComboBox::drop-down {
+    border: none;
+    padding-right: 8px;
+}
+
+/* --- GroupBox / secciones --- */
+QGroupBox {
+    font-weight: 500;
+    color: #1A1A1A;
+    border: 1px solid #E5E5E7;
+    border-radius: 8px;
+    margin-top: 12px;
+    padding: 12px;
+    padding-top: 20px;
+    background-color: #FAFAFA;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 12px;
+    padding: 0 6px;
+    background-color: #FAFAFA;
+    color: #6B6B6B;
+    font-size: 12px;
+}
+
+/* --- Lista de miniaturas (QGraphicsView) --- */
+QGraphicsView#thumbView {
+    background-color: #F5F5F6;
+    border: none;
+    border-radius: 6px;
+}
+
+/* --- Progress bar --- */
+QProgressBar {
+    border: none;
+    background-color: #E5E5E7;
+    border-radius: 4px;
+    height: 8px;
+    text-align: center;
+}
+QProgressBar::chunk {
+    background-color: #2563EB;
+    border-radius: 4px;
+}
+
+/* --- Scrollbars (sutiles) --- */
+QScrollBar:vertical {
+    width: 10px;
+    background: transparent;
+    margin: 0;
+    border-radius: 5px;
+}
+QScrollBar::handle:vertical {
+    background: #D0D0D2;
+    border-radius: 5px;
+    min-height: 30px;
+}
+QScrollBar::handle:vertical:hover {
+    background: #B0B0B2;
+}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0;
+}
