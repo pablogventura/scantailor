@@ -23,6 +23,8 @@
 #include "PageId.h"
 #include "Settings.h"
 #include "Params.h"
+#include "ColorParams.h"
+#include "DespeckleLevel.h"
 #include "OutputParams.h"
 #include "ProjectReader.h"
 #include "ProjectWriter.h"
@@ -90,6 +92,10 @@ Filter::saveSettings(
 	using namespace boost::lambda;
 	
 	QDomElement filter_el(doc.createElement("output"));
+	filter_el.setAttribute("defaultColorMode",
+		Params::formatColorMode(m_ptrSettings->getDefaultColorMode()));
+	filter_el.setAttribute("defaultDespeckleLevel",
+		despeckleLevelToString(m_ptrSettings->getDefaultDespeckleLevel()));
 	writer.enumPages(
 		boost::lambda::bind(
 			&Filter::writePageSettings,
@@ -130,6 +136,16 @@ Filter::loadSettings(ProjectReader const& reader, QDomElement const& filters_el)
 	QDomElement const filter_el(
 		filters_el.namedItem("output").toElement()
 	);
+	if (!filter_el.isNull()) {
+		QString const cm(filter_el.attribute("defaultColorMode"));
+		if (!cm.isEmpty()) {
+			m_ptrSettings->setDefaultColorMode(Params::parseColorMode(cm));
+		}
+		QString const dl(filter_el.attribute("defaultDespeckleLevel"));
+		if (!dl.isEmpty()) {
+			m_ptrSettings->setDefaultDespeckleLevel(despeckleLevelFromString(dl));
+		}
+	}
 	
 	QString const page_tag_name("page");
 	QDomNode node(filter_el.firstChild());

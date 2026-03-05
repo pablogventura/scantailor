@@ -34,7 +34,9 @@ namespace output
 
 Settings::Settings()
 :	m_defaultPictureZoneProps(initialPictureZoneProps()),
-	m_defaultFillZoneProps(initialFillZoneProps())
+	m_defaultFillZoneProps(initialFillZoneProps()),
+	m_defaultColorMode(ColorParams::BLACK_AND_WHITE),
+	m_defaultDespeckleLevel(DESPECKLE_CAUTIOUS)
 {
 }
 
@@ -53,6 +55,8 @@ Settings::clear()
 	m_perPageOutputParams.clear();
 	m_perPagePictureZones.clear();
 	m_perPageFillZones.clear();
+	m_defaultColorMode = ColorParams::BLACK_AND_WHITE;
+	m_defaultDespeckleLevel = DESPECKLE_CAUTIOUS;
 }
 
 void
@@ -107,9 +111,13 @@ Settings::getParams(PageId const& page_id) const
 	PerPageParams::const_iterator const it(m_perPageParams.find(page_id));
 	if (it != m_perPageParams.end()) {
 		return it->second;
-	} else {
-		return Params();
 	}
+	Params p;
+	ColorParams cp;
+	cp.setColorMode(m_defaultColorMode);
+	p.setColorParams(cp);
+	p.setDespeckleLevel(m_defaultDespeckleLevel);
+	return p;
 }
 
 void

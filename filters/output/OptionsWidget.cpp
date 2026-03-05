@@ -45,7 +45,11 @@
 #include <QDebug>
 #include <QComboBox>
 #include <QGroupBox>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QPushButton>
 #include <QVBoxLayout>
+#include <QWidget>
 
 namespace output
 {
@@ -53,14 +57,23 @@ namespace output
 OptionsWidget::OptionsWidget(
 	IntrusivePtr<Settings> const& settings,
 	PageSelectionAccessor const& page_selection_accessor)
-:	m_ptrSettings(settings),
+:	m_outputFormatGroup(0),
+	m_outputFormatCombo(0),
+	m_outputFormat(OUTPUT_TIFF),
+	m_ptrSettings(settings),
 	m_pageSelectionAccessor(page_selection_accessor),
 	m_despeckleLevel(DESPECKLE_NORMAL),
 	m_lastTab(TAB_OUTPUT),
 	m_ignoreThresholdChanges(0),
-	m_outputFormatGroup(0),
-	m_outputFormatCombo(0),
-	m_outputFormat(OUTPUT_TIFF)
+	m_hasSuggestion(false),
+	m_suggestedColorMode(ColorParams::BLACK_AND_WHITE),
+	m_suggestedDespeckleLevel(DESPECKLE_CAUTIOUS),
+	m_suggestionLabel(0),
+	m_applySuggestionBtn(0),
+	m_suggestionWidget(0),
+	m_defaultsGroup(0),
+	m_defaultColorModeCombo(0),
+	m_defaultDespeckleCombo(0)
 {
 	setupUi(this);
 	m_outputFormatGroup = new QGroupBox(tr("Output Format"));
@@ -71,6 +84,43 @@ OptionsWidget::OptionsWidget(
 	m_outputFormatCombo->addItem(tr("JPEG"), OUTPUT_JPEG);
 	formatLayout->addWidget(m_outputFormatCombo);
 	verticalLayout_6->insertWidget(0, m_outputFormatGroup);
+
+	m_suggestionLabel = new QLabel(this);
+	m_suggestionLabel->setVisible(false);
+	m_applySuggestionBtn = new QPushButton(tr("Apply suggestion"), this);
+	m_applySuggestionBtn->setVisible(false);
+	connect(m_applySuggestionBtn, SIGNAL(clicked()), this, SLOT(applySuggestionClicked()));
+	QHBoxLayout* suggestionLayout = new QHBoxLayout();
+	suggestionLayout->addWidget(m_suggestionLabel);
+	suggestionLayout->addWidget(m_applySuggestionBtn);
+	suggestionLayout->addStretch();
+	m_suggestionWidget = new QWidget(this);
+	m_suggestionWidget->setLayout(suggestionLayout);
+	m_suggestionWidget->setVisible(false);
+	verticalLayout_6->insertWidget(1, m_suggestionWidget);
+
+	m_defaultsGroup = new QGroupBox(tr("Defaults for new pages"), this);
+	QVBoxLayout* defaultsLayout = new QVBoxLayout(m_defaultsGroup);
+	QHBoxLayout* defaultColorRow = new QHBoxLayout();
+	defaultColorRow->addWidget(new QLabel(tr("Color mode:")));
+	m_defaultColorModeCombo = new QComboBox();
+	m_defaultColorModeCombo->addItem(tr("Black and White"), ColorParams::BLACK_AND_WHITE);
+	m_defaultColorModeCombo->addItem(tr("Color / Grayscale"), ColorParams::COLOR_GRAYSCALE);
+	m_defaultColorModeCombo->addItem(tr("Mixed"), ColorParams::MIXED);
+	defaultColorRow->addWidget(m_defaultColorModeCombo);
+	defaultsLayout->addLayout(defaultColorRow);
+	QHBoxLayout* defaultDespeckleRow = new QHBoxLayout();
+	defaultDespeckleRow->addWidget(new QLabel(tr("Despeckle:")));
+	m_defaultDespeckleCombo = new QComboBox();
+	m_defaultDespeckleCombo->addItem(tr("Off"), DESPECKLE_OFF);
+	m_defaultDespeckleCombo->addItem(tr("Cautious"), DESPECKLE_CAUTIOUS);
+	m_defaultDespeckleCombo->addItem(tr("Normal"), DESPECKLE_NORMAL);
+	m_defaultDespeckleCombo->addItem(tr("Aggressive"), DESPECKLE_AGGRESSIVE);
+	defaultDespeckleRow->addWidget(m_defaultDespeckleCombo);
+	defaultsLayout->addLayout(defaultDespeckleRow);
+	verticalLayout_6->addWidget(m_defaultsGroup);
+	connect(m_defaultColorModeCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(defaultColorModeChanged(int)));
+	connect(m_defaultDespeckleCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(defaultDespeckleLevelChanged(int)));
 
 	depthPerceptionSlider->setMinimum(qRound(DepthPerception::minValue() * 10));
 	depthPerceptionSlider->setMaximum(qRound(DepthPerception::maxValue() * 10));
@@ -185,6 +235,7 @@ OptionsWidget::~OptionsWidget()
 void
 OptionsWidget::preUpdateUI(PageId const& page_id)
 {
+	clearSuggestion();
 	Params const params(m_ptrSettings->getParams(page_id));
 	m_pageId = page_id;
 	m_outputDpi = params.outputDpi();
@@ -197,11 +248,80 @@ OptionsWidget::preUpdateUI(PageId const& page_id)
 	updateColorsDisplay();
 	updateDewarpingDisplay();
 	updateOutputFormatDisplay();
+	if (m_defaultColorModeCombo) {
+		int idx = m_defaultColorModeCombo->findData(m_ptrSettings->getDefaultColorMode());
+		if (idx >= 0) m_defaultColorModeCombo->setCurrentIndex(idx);
+	}
+	if (m_defaultDespeckleCombo) {
+		int idx = m_defaultDespeckleCombo->findData(m_ptrSettings->getDefaultDespeckleLevel());
+		if (idx >= 0) m_defaultDespeckleCombo->setCurrentIndex(idx);
+	}
 }
 
 void
 OptionsWidget::postUpdateUI()
 {
+}
+
+void
+OptionsWidget::setSuggestion(ColorParams::ColorMode color_mode, DespeckleLevel despeckle_level)
+{
+	m_hasSuggestion = true;
+	m_suggestedColorMode = color_mode;
+	m_suggestedDespeckleLevel = despeckle_level;
+	bool const differs = (m_suggestedColorMode != m_colorParams.colorMode() ||
+	                      m_suggestedDespeckleLevel != m_despeckleLevel);
+	m_suggestionWidget->setVisible(differs);
+	if (differs) {
+		QString colorStr = (m_suggestedColorMode == ColorParams::COLOR_GRAYSCALE)
+			? tr("Color / Grayscale") : (m_suggestedColorMode == ColorParams::MIXED)
+			? tr("Mixed") : tr("Black and White");
+		QString despeckleStr;
+		switch (m_suggestedDespeckleLevel) {
+			case DESPECKLE_OFF: despeckleStr = tr("Off"); break;
+			case DESPECKLE_CAUTIOUS: despeckleStr = tr("Cautious"); break;
+			case DESPECKLE_NORMAL: despeckleStr = tr("Normal"); break;
+			case DESPECKLE_AGGRESSIVE: despeckleStr = tr("Aggressive"); break;
+		}
+		m_suggestionLabel->setText(tr("Suggested: %1, Despeckle: %2").arg(colorStr).arg(despeckleStr));
+		m_applySuggestionBtn->setVisible(true);
+	}
+}
+
+void
+OptionsWidget::clearSuggestion()
+{
+	m_hasSuggestion = false;
+	m_suggestionWidget->setVisible(false);
+}
+
+void
+OptionsWidget::applySuggestionClicked()
+{
+	if (!m_hasSuggestion) return;
+	m_colorParams.setColorMode(m_suggestedColorMode);
+	m_despeckleLevel = m_suggestedDespeckleLevel;
+	m_ptrSettings->setColorParams(m_pageId, m_colorParams);
+	m_ptrSettings->setDespeckleLevel(m_pageId, m_despeckleLevel);
+	updateColorsDisplay();
+	clearSuggestion();
+	emit reloadRequested();
+}
+
+void
+OptionsWidget::defaultColorModeChanged(int idx)
+{
+	if (idx < 0 || !m_defaultColorModeCombo) return;
+	ColorParams::ColorMode mode = static_cast<ColorParams::ColorMode>(m_defaultColorModeCombo->itemData(idx).toInt());
+	m_ptrSettings->setDefaultColorMode(mode);
+}
+
+void
+OptionsWidget::defaultDespeckleLevelChanged(int idx)
+{
+	if (idx < 0 || !m_defaultDespeckleCombo) return;
+	DespeckleLevel level = static_cast<DespeckleLevel>(m_defaultDespeckleCombo->itemData(idx).toInt());
+	m_ptrSettings->setDefaultDespeckleLevel(level);
 }
 
 void

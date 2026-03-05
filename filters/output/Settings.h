@@ -27,6 +27,7 @@
 #include "OutputParams.h"
 #include "DewarpingMode.h"
 #include "dewarping/DistortionModel.h"
+#include "ColorParams.h"
 #include "DespeckleLevel.h"
 #include "ZoneSet.h"
 #include "PropertySet.h"
@@ -68,6 +69,11 @@ public:
 	void setDepthPerception(PageId const& page_id, DepthPerception const& depth_perception);
 
 	void setDespeckleLevel(PageId const& page_id, DespeckleLevel level);
+
+	ColorParams::ColorMode getDefaultColorMode() const { return m_defaultColorMode; }
+	void setDefaultColorMode(ColorParams::ColorMode mode) { m_defaultColorMode = mode; }
+	DespeckleLevel getDefaultDespeckleLevel() const { return m_defaultDespeckleLevel; }
+	void setDefaultDespeckleLevel(DespeckleLevel level) { m_defaultDespeckleLevel = level; }
 	
 	std::unique_ptr<OutputParams> getOutputParams(PageId const& page_id) const;
 	
@@ -110,6 +116,8 @@ private:
 	PerPageZones m_perPageFillZones;
 	PropertySet m_defaultPictureZoneProps;
 	PropertySet m_defaultFillZoneProps;
+	ColorParams::ColorMode m_defaultColorMode;
+	DespeckleLevel m_defaultDespeckleLevel;
 };
 
 } // namespace output

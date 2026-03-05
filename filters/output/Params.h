@@ -71,9 +71,10 @@ public:
 	void setOutputFormat(OutputFormat format) { m_outputFormat = format; }
 	
 	QDomElement toXml(QDomDocument& doc, QString const& name) const;
-private:
+
 	static ColorParams::ColorMode parseColorMode(QString const& str);
 	static QString formatColorMode(ColorParams::ColorMode mode);
+private:
 	static OutputFormat outputFormatFromString(QString const& str);
 	static QString outputFormatToString(OutputFormat format);
 	

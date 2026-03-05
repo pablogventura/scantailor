@@ -61,6 +61,10 @@ public:
 	
 	void postUpdateUI();
 
+	void setSuggestion(ColorParams::ColorMode color_mode, DespeckleLevel despeckle_level);
+	void clearSuggestion();
+	void applySuggestionClicked();
+
 	ImageViewTab lastTab() const { return m_lastTab; }
 
 	DepthPerception const& depthPerception() const { return m_depthPerception; }
@@ -118,6 +122,9 @@ private slots:
 	void depthPerceptionChangedSlot(int val);
 
 	void outputFormatChanged(int idx);
+
+	void defaultColorModeChanged(int idx);
+	void defaultDespeckleLevelChanged(int idx);
 private:
 	void handleDespeckleLevelChange(DespeckleLevel level);
 
@@ -143,6 +150,15 @@ private:
 	DespeckleLevel m_despeckleLevel;
 	ImageViewTab m_lastTab;
 	int m_ignoreThresholdChanges;
+	bool m_hasSuggestion;
+	ColorParams::ColorMode m_suggestedColorMode;
+	DespeckleLevel m_suggestedDespeckleLevel;
+	class QLabel* m_suggestionLabel;
+	class QPushButton* m_applySuggestionBtn;
+	class QWidget* m_suggestionWidget;
+	class QGroupBox* m_defaultsGroup;
+	class QComboBox* m_defaultColorModeCombo;
+	class QComboBox* m_defaultDespeckleCombo;
 };
 
 } // namespace output

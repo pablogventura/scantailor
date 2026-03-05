@@ -46,6 +46,7 @@ SET(
 	DespeckleView.cpp DespeckleView.h
 	DespeckleVisualization.cpp DespeckleVisualization.h
 	DespeckleLevel.cpp DespeckleLevel.h
+	OutputSuggestions.cpp OutputSuggestions.h
 	DewarpingView.cpp DewarpingView.h
 	DewarpingMode.cpp DewarpingMode.h
 	ChangeDewarpingDialog.cpp ChangeDewarpingDialog.h

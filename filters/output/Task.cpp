@@ -53,6 +53,7 @@
 #include "ThumbnailPixmapCache.h"
 #include "DebugImages.h"
 #include "OutputGenerator.h"
+#include "OutputSuggestions.h"
 #include "TiffWriter.h"
 #include "ImageLoader.h"
 #include "ErrorWidget.h"
@@ -97,7 +98,10 @@ public:
 		BinaryImage const& picture_mask,
 		DespeckleState const& despeckle_state,
 		DespeckleVisualization const& despeckle_visualization,
-		bool batch, bool debug);
+		bool batch, bool debug,
+		bool has_suggestion = false,
+		ColorParams::ColorMode suggested_color = ColorParams::BLACK_AND_WHITE,
+		DespeckleLevel suggested_despeckle = DESPECKLE_CAUTIOUS);
 	
 	virtual void updateUI(FilterUiInterface* ui);
 	
@@ -118,6 +122,9 @@ private:
 	DespeckleState m_despeckleState;
 	DespeckleVisualization m_despeckleVisualization;
 	DespeckleLevel m_despeckleLevel;
+	bool m_hasSuggestion;
+	ColorParams::ColorMode m_suggestedColor;
+	DespeckleLevel m_suggestedDespeckle;
 	bool m_batchProcessing;
 	bool m_debug;
 };
@@ -399,6 +406,18 @@ Task::process(
 		despeckle_visualization = despeckle_state.visualize();
 	}
 
+	bool has_suggestion = false;
+	ColorParams::ColorMode suggested_color = ColorParams::BLACK_AND_WHITE;
+	DespeckleLevel suggested_despeckle = DESPECKLE_CAUTIOUS;
+	if (CommandLine::get().isGui() && !m_batchProcessing && !data.origImage().isNull()) {
+		QRect const out_content(generator.outputContentRect());
+		QRectF const orig_content_f(new_xform.transformBack().mapRect(QRectF(out_content)));
+		QRect const orig_content(orig_content_f.toAlignedRect().intersected(data.origImage().rect()));
+		suggested_color = OutputSuggestions::suggestColorMode(data.origImage(), orig_content);
+		suggested_despeckle = OutputSuggestions::suggestDespeckleLevel(data.origImage(), orig_content);
+		has_suggestion = true;
+	}
+
 	if (CommandLine::get().isGui()) {
 		return FilterResultPtr(
 			new UiUpdater(
@@ -406,7 +425,8 @@ Task::process(
 				new_xform, generator.outputContentRect(),
 				m_pageId, data.origImage(), out_img, automask_img,
 				despeckle_state, despeckle_visualization,
-				m_batchProcessing, m_debug
+				m_batchProcessing, m_debug,
+				has_suggestion, suggested_color, suggested_despeckle
 			)
 		);
 	} else {
@@ -460,7 +480,10 @@ Task::UiUpdater::UiUpdater(
 	BinaryImage const& picture_mask,
 	DespeckleState const& despeckle_state,
 	DespeckleVisualization const& despeckle_visualization,
-	bool const batch, bool const debug)
+	bool const batch, bool const debug,
+	bool const has_suggestion,
+	ColorParams::ColorMode const suggested_color,
+	DespeckleLevel const suggested_despeckle)
 :	m_ptrFilter(filter),
 	m_ptrSettings(settings),
 	m_ptrDbg(std::move(dbg_img)),
@@ -476,7 +499,10 @@ Task::UiUpdater::UiUpdater(
 	m_despeckleState(despeckle_state),
 	m_despeckleVisualization(despeckle_visualization),
 	m_batchProcessing(batch),
-	m_debug(debug)
+	m_debug(debug),
+	m_hasSuggestion(has_suggestion),
+	m_suggestedColor(suggested_color),
+	m_suggestedDespeckle(suggested_despeckle)
 {
 }
 
@@ -486,6 +512,11 @@ Task::UiUpdater::updateUI(FilterUiInterface* ui)
 	// This function is executed from the GUI thread.
 	
 	OptionsWidget* const opt_widget = m_ptrFilter->optionsWidget();
+	if (m_hasSuggestion) {
+		opt_widget->setSuggestion(m_suggestedColor, m_suggestedDespeckle);
+	} else {
+		opt_widget->clearSuggestion();
+	}
 	opt_widget->postUpdateUI();
 	ui->setOptionsWidget(opt_widget, ui->KEEP_OWNERSHIP);
 	
