@@ -21,7 +21,6 @@ SET(
 )
 
 SOURCE_GROUP(Sources FILES ${sources})
-QT4_AUTOMOC(${sources})
 
 ADD_LIBRARY(zones STATIC ${sources})
 

@@ -22,7 +22,6 @@
 #include <QBrush>
 #include <Qt>
 #ifndef Q_MOC_RUN
-#include <boost/foreach.hpp>
 #endif
 
 BasicSplineVisualizer::BasicSplineVisualizer()
@@ -40,7 +39,7 @@ BasicSplineVisualizer::drawSplines(
 	QPainter& painter, QTransform const& to_screen,
 	EditableZoneSet const& zones)
 {
-	BOOST_FOREACH(EditableZoneSet::Zone const& zone, zones) {
+	for (EditableZoneSet::Zone const& zone : zones) {
 		drawSpline(painter, to_screen, zone.spline());
 	}
 }

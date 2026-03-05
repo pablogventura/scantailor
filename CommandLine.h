@@ -31,6 +31,7 @@
 #include "filters/output/DespeckleLevel.h"
 #include "filters/output/DewarpingMode.h"
 #include "filters/output/DepthPerception.h"
+#include "filters/output/OutputFormat.h"
 #include "filters/page_layout/Alignment.h"
 #include "ImageFileInfo.h"
 #include "Margins.h"
@@ -99,6 +100,8 @@ public:
 	output::DewarpingMode getDewarpingMode() const { return m_dewarpingMode; }
 	output::DespeckleLevel getDespeckleLevel() const { return m_despeckleLevel; }
 	output::DepthPerception getDepthPerception() const { return m_depthPerception; }
+	bool hasOutputFormat() const { return contains("output-format"); }
+	output::OutputFormat getOutputFormat() const;
 
 	bool help() { return m_options.contains("help"); }
 	void printHelp();

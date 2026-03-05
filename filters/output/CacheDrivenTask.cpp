@@ -60,8 +60,8 @@ CacheDrivenTask::process(
 {
 	if (ThumbnailCollector* thumb_col = dynamic_cast<ThumbnailCollector*>(collector)) {
 		
-		QString const out_file_path(m_outFileNameGen.filePathFor(page_info.id()));
 		Params const params(m_ptrSettings->getParams(page_info.id()));
+		QString const out_file_path(m_outFileNameGen.filePathFor(page_info.id(), params.outputFormat()));
 
 		ImageTransformation new_xform(xform);
 		new_xform.postScaleToDpi(params.outputDpi());

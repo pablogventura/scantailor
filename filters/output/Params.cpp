@@ -31,7 +31,8 @@ namespace output
 
 Params::Params()
 :	m_dpi(600, 600),
-	m_despeckleLevel(DESPECKLE_CAUTIOUS)
+	m_despeckleLevel(DESPECKLE_CAUTIOUS),
+	m_outputFormat(OUTPUT_TIFF)
 {
 }
 
@@ -40,7 +41,8 @@ Params::Params(QDomElement const& el)
 	m_distortionModel(el.namedItem("distortion-model").toElement()),
 	m_depthPerception(el.attribute("depthPerception")),
 	m_dewarpingMode(el.attribute("dewarpingMode")),
-	m_despeckleLevel(despeckleLevelFromString(el.attribute("despeckleLevel")))
+	m_despeckleLevel(despeckleLevelFromString(el.attribute("despeckleLevel"))),
+	m_outputFormat(outputFormatFromString(el.attribute("outputFormat", "tiff")))
 {
 	QDomElement const cp(el.namedItem("color-params").toElement());
 	m_colorParams.setColorMode(parseColorMode(cp.attribute("colorMode")));
@@ -64,6 +66,7 @@ Params::toXml(QDomDocument& doc, QString const& name) const
 	el.setAttribute("depthPerception", m_depthPerception.toString());
 	el.setAttribute("dewarpingMode", m_dewarpingMode.toString());
 	el.setAttribute("despeckleLevel", despeckleLevelToString(m_despeckleLevel));
+	el.setAttribute("outputFormat", outputFormatToString(m_outputFormat));
 	el.appendChild(marshaller.dpi(m_dpi, "dpi"));
 	
 	QDomElement cp(doc.createElement("color-params"));
@@ -116,7 +119,26 @@ Params::formatColorMode(ColorParams::ColorMode const mode)
 			str = "mixed";
 			break;
 	}
-	return QString::fromAscii(str);
+	return QString::fromLatin1(str);
+}
+
+OutputFormat
+Params::outputFormatFromString(QString const& str)
+{
+	QString s(str.trimmed().toLower());
+	if (s == QLatin1String("png")) return OUTPUT_PNG;
+	if (s == QLatin1String("jpg") || s == QLatin1String("jpeg")) return OUTPUT_JPEG;
+	return OUTPUT_TIFF;
+}
+
+QString
+Params::outputFormatToString(OutputFormat format)
+{
+	switch (format) {
+		case OUTPUT_PNG:  return QString::fromLatin1("png");
+		case OUTPUT_JPEG:  return QString::fromLatin1("jpeg");
+		default:           return QString::fromLatin1("tiff");
+	}
 }
 
 } // namespace output

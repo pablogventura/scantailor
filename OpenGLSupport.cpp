@@ -20,8 +20,8 @@
 #include "config.h"
 #include <QSettings>
 #ifdef ENABLE_OPENGL
-#include <QGLFormat>
-#include <QGLWidget>
+#include <QOpenGLWidget>
+#include <QSurfaceFormat>
 #endif
 
 bool
@@ -30,28 +30,23 @@ OpenGLSupport::supported()
 #ifndef ENABLE_OPENGL
 	return false;
 #else
-	if (!QGLFormat::hasOpenGL()) {
-		return false;
-	}
-
-	QGLFormat format;
-	format.setSampleBuffers(true);
-	format.setStencil(true);
-	format.setAlpha(true);
-
-	QGLWidget widget(format);
+	QSurfaceFormat format;
+	format.setSamples(4);
+	format.setStencilBufferSize(8);
+	format.setAlphaBufferSize(8);
+	QOpenGLWidget widget;
+	widget.setFormat(format);
+	widget.show();
 	format = widget.format();
-
-	if (!format.sampleBuffers()) {
+	if (format.samples() < 1) {
 		return false;
 	}
-	if (!format.stencil()) {
+	if (format.stencilBufferSize() < 1) {
 		return false;
 	}
-	if (!format.alpha()) {
+	if (format.alphaBufferSize() < 1) {
 		return false;
 	}
-
 	return true;
 #endif
 }

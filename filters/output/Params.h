@@ -25,6 +25,7 @@
 #include "dewarping/DistortionModel.h"
 #include "DepthPerception.h"
 #include "DespeckleLevel.h"
+#include "OutputFormat.h"
 
 class QDomDocument;
 class QDomElement;
@@ -64,12 +65,17 @@ public:
 	DespeckleLevel despeckleLevel() const { return m_despeckleLevel; }
 
 	void setDespeckleLevel(DespeckleLevel level) { m_despeckleLevel = level; }
+
+	OutputFormat outputFormat() const { return m_outputFormat; }
+
+	void setOutputFormat(OutputFormat format) { m_outputFormat = format; }
 	
 	QDomElement toXml(QDomDocument& doc, QString const& name) const;
 private:
 	static ColorParams::ColorMode parseColorMode(QString const& str);
-	
 	static QString formatColorMode(ColorParams::ColorMode mode);
+	static OutputFormat outputFormatFromString(QString const& str);
+	static QString outputFormatToString(OutputFormat format);
 	
 	Dpi m_dpi;
 	ColorParams m_colorParams;
@@ -77,6 +83,7 @@ private:
 	DepthPerception m_depthPerception;
 	DewarpingMode m_dewarpingMode;
 	DespeckleLevel m_despeckleLevel;
+	OutputFormat m_outputFormat;
 };
 
 } // namespace output

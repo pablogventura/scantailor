@@ -154,7 +154,7 @@ Task::process(
 
 	Params params(m_ptrSettings->getParams(m_pageId));
 	RenderParams const render_params(params.colorParams());
-	QString const out_file_path(m_outFileNameGen.filePathFor(m_pageId));
+	QString const out_file_path(m_outFileNameGen.filePathFor(m_pageId, params.outputFormat()));
 	QFileInfo const out_file_info(out_file_path);
 
 	ImageTransformation new_xform(data.xform());
@@ -326,11 +326,22 @@ Task::process(
 		}
 
 		bool invalidate_params = false;
-		
-		if (!TiffWriter::writeImage(out_file_path, out_img)) {
+		bool write_ok = false;
+		switch (params.outputFormat()) {
+			case output::OUTPUT_TIFF:
+				write_ok = TiffWriter::writeImage(out_file_path, out_img);
+				break;
+			case output::OUTPUT_PNG:
+				write_ok = out_img.save(out_file_path, "PNG");
+				break;
+			case output::OUTPUT_JPEG:
+				write_ok = out_img.save(out_file_path, "JPEG", 92);
+				break;
+		}
+		if (!write_ok) {
 			invalidate_params = true;
 		} else {
-			deleteMutuallyExclusiveOutputFiles();
+			deleteMutuallyExclusiveOutputFiles(params.outputFormat());
 		}
 
 		if (write_automask) {
@@ -406,18 +417,18 @@ Task::process(
  * Delete output files mutually exclusive to m_pageId.
  */
 void
-Task::deleteMutuallyExclusiveOutputFiles()
+Task::deleteMutuallyExclusiveOutputFiles(output::OutputFormat format)
 {
 	switch (m_pageId.subPage()) {
 		case PageId::SINGLE_PAGE:
 			QFile::remove(
 				m_outFileNameGen.filePathFor(
-					PageId(m_pageId.imageId(), PageId::LEFT_PAGE)
+					PageId(m_pageId.imageId(), PageId::LEFT_PAGE), format
 				)
 			);
 			QFile::remove(
 				m_outFileNameGen.filePathFor(
-					PageId(m_pageId.imageId(), PageId::RIGHT_PAGE)
+					PageId(m_pageId.imageId(), PageId::RIGHT_PAGE), format
 				)
 			);
 			break;
@@ -425,7 +436,7 @@ Task::deleteMutuallyExclusiveOutputFiles()
 		case PageId::RIGHT_PAGE:
 			QFile::remove(
 				m_outFileNameGen.filePathFor(
-					PageId(m_pageId.imageId(), PageId::SINGLE_PAGE)
+					PageId(m_pageId.imageId(), PageId::SINGLE_PAGE), format
 				)
 			);
 			break;

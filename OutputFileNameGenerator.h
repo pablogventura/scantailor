@@ -21,6 +21,7 @@
 
 #include "FileNameDisambiguator.h"
 #include "IntrusivePtr.h"
+#include "filters/output/OutputFormat.h"
 #include <QString>
 #include <Qt>
 
@@ -48,8 +49,10 @@ public:
 	FileNameDisambiguator const* disambiguator() const { return m_ptrDisambiguator.get(); }
 
 	QString fileNameFor(PageId const& page) const;
+	QString fileNameFor(PageId const& page, output::OutputFormat format) const;
 
 	QString filePathFor(PageId const& page) const;
+	QString filePathFor(PageId const& page, output::OutputFormat format) const;
 private:
 	IntrusivePtr<FileNameDisambiguator> m_ptrDisambiguator;
 	QString m_outDir;

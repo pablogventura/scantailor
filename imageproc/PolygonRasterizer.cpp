@@ -27,7 +27,6 @@
 #include <QImage>
 #include <QtGlobal>
 #ifndef Q_MOC_RUN
-#include <boost/foreach.hpp>
 #endif
 #include <vector>
 #include <iterator>
@@ -320,7 +319,7 @@ PolygonRasterizer::Rasterizer::prepareEdges()
 	// Create an ordered list of y coordinates of polygon vertices.
 	std::vector<double> y_values;
 	y_values.reserve(num_verts + 2);
-	BOOST_FOREACH(QPointF const& pt, m_fillPoly) {
+	for (QPointF const& pt : m_fillPoly) {
 		y_values.push_back(pt.y());
 	}
 	
@@ -335,7 +334,7 @@ PolygonRasterizer::Rasterizer::prepareEdges()
 	
 	// Break edges into non-overlaping components, then sort them.
 	m_edgeComponents.reserve(m_edges.size());
-	BOOST_FOREACH(Edge const& edge, m_edges) {
+	for (Edge const& edge : m_edges) {
 		std::vector<double>::iterator it(
 			std::lower_bound(y_values.begin(), y_values.end(), edge.topY())
 		);
@@ -392,7 +391,7 @@ PolygonRasterizer::Rasterizer::fillBinary(
 		
 		// Calculate the intersection point of each edge with
 		// the current horizontal line.
-		BOOST_FOREACH(EdgeComponent& ecomp, edges_for_line) {
+		for (EdgeComponent& ecomp : edges_for_line) {
 			ecomp.setX(ecomp.edge().xForY(y));
 		}
 		
@@ -451,7 +450,7 @@ PolygonRasterizer::Rasterizer::fillGrayscale(
 		
 		// Calculate the intersection point of each edge with
 		// the current horizontal line.
-		BOOST_FOREACH(EdgeComponent& ecomp, edges_for_line) {
+		for (EdgeComponent& ecomp : edges_for_line) {
 			ecomp.setX(ecomp.edge().xForY(y));
 		}
 		

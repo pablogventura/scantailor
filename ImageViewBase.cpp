@@ -53,8 +53,8 @@
 #include <math.h>
 
 #ifdef ENABLE_OPENGL
-#include <QGLWidget>
-#include <QGLFormat>
+#include <QOpenGLWidget>
+#include <QSurfaceFormat>
 #endif
 
 using namespace imageproc;
@@ -164,17 +164,15 @@ ImageViewBase::ImageViewBase(
 #ifdef ENABLE_OPENGL
 	if (QSettings().value("settings/use_3d_acceleration", false) != false) {
 		if (OpenGLSupport::supported()) {
-			QGLFormat format;
-			format.setSampleBuffers(true);
-			format.setStencil(true);
-			format.setAlpha(true);
-			format.setRgba(true);
-			format.setDepth(false);
-
-			// Most of hardware refuses to work for us with direct rendering enabled.
-			format.setDirectRendering(false);
-
-			setViewport(new QGLWidget(format));
+			QSurfaceFormat format;
+			format.setSamples(4);
+			format.setStencilBufferSize(8);
+			format.setAlphaBufferSize(8);
+			format.setDepthBufferSize(0);
+			format.setOption(QSurfaceFormat::StereoBuffers, false);
+			QOpenGLWidget* glw = new QOpenGLWidget();
+			glw->setFormat(format);
+			setViewport(glw);
 		}
 	}
 #endif
@@ -450,8 +448,8 @@ ImageViewBase::paintEvent(QPaintEvent* event)
 
 	// On X11 (except with OpenGL), SmoothPixmapTransform is too slow, so don't enable it.
 	bool smooth_pixmap_ok = true;
-#if defined(Q_WS_X11)
-	smooth_pixmap_ok = viewport()->inherits("QGLWidget");
+#if defined(Q_OS_LINUX) && !defined(QT_NO_OPENGL)
+	smooth_pixmap_ok = viewport()->inherits("QOpenGLWidget");
 #endif
 	if (smooth_pixmap_ok) {
 		double const xscale = m_virtualToWidget.m11();

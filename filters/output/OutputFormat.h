@@ -16,29 +16,31 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "PageRange.h"
-std::set<PageId>
-PageRange::selectEveryOther(PageId const& base) const
+#ifndef OUTPUT_OUTPUTFORMAT_H_
+#define OUTPUT_OUTPUTFORMAT_H_
+
+#include <QString>
+
+namespace output
 {
-	std::set<PageId> selection;
-	
-	std::vector<PageId>::const_iterator it(pages.begin());
-	std::vector<PageId>::const_iterator const end(pages.end());
-	for (; it != end && *it != base; ++it) {
-		// Continue until we have a match.
-	}
-	if (it == end) {
-		return selection;
-	}
 
-	int const base_idx = it - pages.begin();
-	int idx = 0;
-	for (PageId const& page_id : pages) {
-		if (((idx - base_idx) & 1) == 0) {
-			selection.insert(page_id);
-		}
-		++idx;
-	}
+enum OutputFormat
+{
+	OUTPUT_TIFF,
+	OUTPUT_PNG,
+	OUTPUT_JPEG
+};
 
-	return selection;
+inline QString extensionFor(OutputFormat format)
+{
+	switch (format) {
+		case OUTPUT_TIFF: return QString::fromLatin1("tif");
+		case OUTPUT_PNG:  return QString::fromLatin1("png");
+		case OUTPUT_JPEG: return QString::fromLatin1("jpg");
+	}
+	return QString::fromLatin1("tif");
 }
+
+} // namespace output
+
+#endif

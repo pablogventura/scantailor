@@ -404,6 +404,9 @@ ConsoleBatch::setupOutput(std::set<PageId> allPages)
 		if (cli.hasDepthPerception())
 			params.setDepthPerception(cli.getDepthPerception());
 
+		if (cli.hasOutputFormat())
+			params.setOutputFormat(cli.getOutputFormat());
+
 		output->getSettings()->setParams(page, params);
 	}
 }

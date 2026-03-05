@@ -27,7 +27,6 @@
 #include <QDomDocument>
 #include <QDomElement>
 #ifndef Q_MOC_RUN
-#include <boost/foreach.hpp>
 #endif
 #include <algorithm>
 
@@ -156,7 +155,7 @@ DistortionModel::boundingBox(QTransform const& transform) const
 	double bottom = NumericTraits<double>::min();
 	double right = bottom;
 
-	BOOST_FOREACH(QPointF pt, m_topCurve.polyline()) {
+	for (QPointF pt : m_topCurve.polyline()) {
 		pt = transform.map(pt);
 		left = std::min<double>(left, pt.x());
 		right = std::max<double>(right, pt.x());
@@ -164,7 +163,7 @@ DistortionModel::boundingBox(QTransform const& transform) const
 		bottom = std::max<double>(bottom, pt.y());
 	}
 
-	BOOST_FOREACH(QPointF pt, m_bottomCurve.polyline()) {
+	for (QPointF pt : m_bottomCurve.polyline()) {
 		pt = transform.map(pt);
 		left = std::min<double>(left, pt.x());
 		right = std::max<double>(right, pt.x());

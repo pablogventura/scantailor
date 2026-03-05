@@ -30,6 +30,7 @@
 #include <QString>
 #include <QStringList>
 #include <QTranslator>
+#include <QApplication>
 #include <Qt>
 #include <string.h>
 
@@ -127,6 +128,11 @@ static bool crashCallback(wchar_t const* dump_path,
 
 int main(int argc, char** argv)
 {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+	QApplication::setAttribute(Qt::AA_EnableHighDpiScaling, true);
+	QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps, true);
+#endif
+
 #ifdef ENABLE_CRASH_REPORTER
 	getCrashReporterPath(
 		crash_reporter_path,

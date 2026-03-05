@@ -57,10 +57,10 @@ OutputFileNameGenerator::fileNameFor(PageId const& page) const
 
 	QString name(QFileInfo(page.imageId().filePath()).completeBaseName());
 	if (label != 0) {
-		name += QString::fromAscii("(%1)").arg(label);
+		name += QString::fromLatin1("(%1)").arg(label);
 	}
 	if (page.imageId().isMultiPageFile()) {
-		name += QString::fromAscii("_page%1").arg(
+		name += QString::fromLatin1("_page%1").arg(
 			page.imageId().page(), 4, 10, QLatin1Char('0')
 		);
 	}
@@ -69,14 +69,46 @@ OutputFileNameGenerator::fileNameFor(PageId const& page) const
 		name += QLatin1Char(ltr == (sub_page == PageId::LEFT_PAGE) ? '1' : '2');
 		name += QLatin1Char(sub_page == PageId::LEFT_PAGE ? 'L' : 'R');
 	}
-	name += QString::fromAscii(".tif");
-	
+	name += QLatin1Char('.');
+	name += output::extensionFor(output::OUTPUT_TIFF);
+	return name;
+}
+
+QString
+OutputFileNameGenerator::fileNameFor(PageId const& page, output::OutputFormat format) const
+{
+	bool const ltr = (m_layoutDirection == Qt::LeftToRight);
+	PageId::SubPage const sub_page = page.subPage();
+	int const label = m_ptrDisambiguator->getLabel(page.imageId().filePath());
+
+	QString name(QFileInfo(page.imageId().filePath()).completeBaseName());
+	if (label != 0) {
+		name += QString::fromLatin1("(%1)").arg(label);
+	}
+	if (page.imageId().isMultiPageFile()) {
+		name += QString::fromLatin1("_page%1").arg(
+			page.imageId().page(), 4, 10, QLatin1Char('0')
+		);
+	}
+	if (sub_page != PageId::SINGLE_PAGE) {
+		name += QLatin1Char('_');
+		name += QLatin1Char(ltr == (sub_page == PageId::LEFT_PAGE) ? '1' : '2');
+		name += QLatin1Char(sub_page == PageId::LEFT_PAGE ? 'L' : 'R');
+	}
+	name += QLatin1Char('.');
+	name += output::extensionFor(format);
 	return name;
 }
 
 QString
 OutputFileNameGenerator::filePathFor(PageId const& page) const
 {
-	QString const file_name(fileNameFor(page));
+	return filePathFor(page, output::OUTPUT_TIFF);
+}
+
+QString
+OutputFileNameGenerator::filePathFor(PageId const& page, output::OutputFormat format) const
+{
+	QString const file_name(fileNameFor(page, format));
 	return QDir(m_outDir).absoluteFilePath(file_name);
 }

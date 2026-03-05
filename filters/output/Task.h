@@ -67,7 +67,7 @@ public:
 private:
 	class UiUpdater;
 	
-	void deleteMutuallyExclusiveOutputFiles();
+	void deleteMutuallyExclusiveOutputFiles(output::OutputFormat format);
 
 	IntrusivePtr<Filter> m_ptrFilter;
 	IntrusivePtr<Settings> m_ptrSettings;

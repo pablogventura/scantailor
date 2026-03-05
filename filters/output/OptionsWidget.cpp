@@ -23,6 +23,7 @@
 #include "ApplyColorsDialog.h"
 #include "Settings.h"
 #include "Params.h"
+#include "OutputFormat.h"
 #include "dewarping/DistortionModel.h"
 #include "DespeckleLevel.h"
 #include "ZoneSet.h"
@@ -32,7 +33,6 @@
 #include "ScopedIncDec.h"
 #include "config.h"
 #ifndef Q_MOC_RUN
-#include <boost/foreach.hpp>
 #endif
 #include <QtGlobal>
 #include <QVariant>
@@ -44,6 +44,9 @@
 #include <QSize>
 #include <Qt>
 #include <QDebug>
+#include <QComboBox>
+#include <QGroupBox>
+#include <QVBoxLayout>
 
 namespace output
 {
@@ -55,9 +58,20 @@ OptionsWidget::OptionsWidget(
 	m_pageSelectionAccessor(page_selection_accessor),
 	m_despeckleLevel(DESPECKLE_NORMAL),
 	m_lastTab(TAB_OUTPUT),
-	m_ignoreThresholdChanges(0)
+	m_ignoreThresholdChanges(0),
+	m_outputFormatGroup(0),
+	m_outputFormatCombo(0),
+	m_outputFormat(OUTPUT_TIFF)
 {
 	setupUi(this);
+	m_outputFormatGroup = new QGroupBox(tr("Output Format"));
+	QVBoxLayout* formatLayout = new QVBoxLayout(m_outputFormatGroup);
+	m_outputFormatCombo = new QComboBox();
+	m_outputFormatCombo->addItem(tr("TIFF"), OUTPUT_TIFF);
+	m_outputFormatCombo->addItem(tr("PNG"), OUTPUT_PNG);
+	m_outputFormatCombo->addItem(tr("JPEG"), OUTPUT_JPEG);
+	formatLayout->addWidget(m_outputFormatCombo);
+	verticalLayout_6->insertWidget(0, m_outputFormatGroup);
 
 	depthPerceptionSlider->setMinimum(qRound(DepthPerception::minValue() * 10));
 	depthPerceptionSlider->setMaximum(qRound(DepthPerception::maxValue() * 10));
@@ -77,7 +91,12 @@ OptionsWidget::OptionsWidget(
 	updateDpiDisplay();
 	updateColorsDisplay();
 	updateDewarpingDisplay();
+	updateOutputFormatDisplay();
 	
+	connect(
+		m_outputFormatCombo, SIGNAL(currentIndexChanged(int)),
+		this, SLOT(outputFormatChanged(int))
+	);
 	connect(
 		changeDpiButton, SIGNAL(clicked()),
 		this, SLOT(changeDpiButtonClicked())
@@ -174,9 +193,11 @@ OptionsWidget::preUpdateUI(PageId const& page_id)
 	m_dewarpingMode = params.dewarpingMode();
 	m_depthPerception = params.depthPerception();
 	m_despeckleLevel = params.despeckleLevel();
+	m_outputFormat = params.outputFormat();
 	updateDpiDisplay();
 	updateColorsDisplay();
 	updateDewarpingDisplay();
+	updateOutputFormatDisplay();
 }
 
 void
@@ -191,6 +212,7 @@ OptionsWidget::tabChanged(ImageViewTab const tab)
 	updateDpiDisplay();
 	updateColorsDisplay();
 	updateDewarpingDisplay();
+	updateOutputFormatDisplay();
 	reloadIfNecessary();
 }
 
@@ -333,7 +355,7 @@ OptionsWidget::applyColorsButtonClicked()
 void
 OptionsWidget::dpiChanged(std::set<PageId> const& pages, Dpi const& dpi)
 {
-	BOOST_FOREACH(PageId const& page_id, pages) {
+	for (PageId const& page_id : pages) {
 		m_ptrSettings->setDpi(page_id, dpi);
 		emit invalidateThumbnail(page_id);
 	}
@@ -348,7 +370,7 @@ OptionsWidget::dpiChanged(std::set<PageId> const& pages, Dpi const& dpi)
 void
 OptionsWidget::applyColorsConfirmed(std::set<PageId> const& pages)
 {
-	BOOST_FOREACH(PageId const& page_id, pages) {
+	for (PageId const& page_id : pages) {
 		m_ptrSettings->setColorParams(page_id, m_colorParams);
 		emit invalidateThumbnail(page_id);
 	}
@@ -417,7 +439,7 @@ OptionsWidget::applyDespeckleButtonClicked()
 void
 OptionsWidget::applyDespeckleConfirmed(std::set<PageId> const& pages)
 {
-	BOOST_FOREACH(PageId const& page_id, pages) {
+	for (PageId const& page_id : pages) {
 		m_ptrSettings->setDespeckleLevel(page_id, m_despeckleLevel);
 		emit invalidateThumbnail(page_id);
 	}
@@ -444,7 +466,7 @@ OptionsWidget::changeDewarpingButtonClicked()
 void
 OptionsWidget::dewarpingChanged(std::set<PageId> const& pages, DewarpingMode const& mode)
 {
-	BOOST_FOREACH(PageId const& page_id, pages) {
+	for (PageId const& page_id : pages) {
 		m_ptrSettings->setDewarpingMode(page_id, mode);
 		emit invalidateThumbnail(page_id);
 	}
@@ -497,7 +519,7 @@ OptionsWidget::applyDepthPerceptionButtonClicked()
 void
 OptionsWidget::applyDepthPerceptionConfirmed(std::set<PageId> const& pages)
 {
-	BOOST_FOREACH(PageId const& page_id, pages) {
+	for (PageId const& page_id : pages) {
 		m_ptrSettings->setDepthPerception(page_id, m_depthPerception);
 		emit invalidateThumbnail(page_id);
 	}
@@ -582,7 +604,7 @@ OptionsWidget::updateDpiDisplay()
 {
 	if (m_outputDpi.horizontal() != m_outputDpi.vertical()) {
 		dpiLabel->setText(
-			QString::fromAscii("%1 x %2")
+			QString::fromLatin1("%1 x %2")
 			.arg(m_outputDpi.horizontal()).arg(m_outputDpi.vertical())
 		);
 	} else {
@@ -650,6 +672,34 @@ OptionsWidget::updateColorsDisplay()
 	}
 	
 	colorModeSelector->blockSignals(false);
+}
+
+void
+OptionsWidget::updateOutputFormatDisplay()
+{
+	if (!m_outputFormatCombo)
+		return;
+	m_outputFormatCombo->blockSignals(true);
+	int idx = m_outputFormatCombo->findData(m_outputFormat);
+	if (idx >= 0)
+		m_outputFormatCombo->setCurrentIndex(idx);
+	m_outputFormatCombo->blockSignals(false);
+}
+
+void
+OptionsWidget::outputFormatChanged(int idx)
+{
+	if (idx < 0 || !m_outputFormatCombo)
+		return;
+	OutputFormat format = static_cast<OutputFormat>(m_outputFormatCombo->itemData(idx).toInt());
+	if (format == m_outputFormat)
+		return;
+	m_outputFormat = format;
+	Params params(m_ptrSettings->getParams(m_pageId));
+	params.setOutputFormat(format);
+	m_ptrSettings->setParams(m_pageId, params);
+	emit invalidateThumbnail(m_pageId);
+	emit reloadRequested();
 }
 
 void

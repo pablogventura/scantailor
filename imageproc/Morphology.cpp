@@ -26,7 +26,6 @@
 #include <QRect>
 #include <QDebug>
 #ifndef Q_MOC_RUN
-#include <boost/foreach.hpp>
 #endif
 #include <vector>
 #include <stdexcept>
@@ -1083,7 +1082,7 @@ BinaryImage hitMissMatch(
 	
 	bool first = true;
 	
-	BOOST_FOREACH (QPoint const& hit, hits) {
+	for (QPoint const& hit : hits) {
 		QRect src_rect(rect);
 		QRect dst_rect(rect.translated(-hit));
 		adjustToFit(rect, dst_rect, src_rect);
@@ -1106,7 +1105,7 @@ BinaryImage hitMissMatch(
 		}
 	}
 	
-	BOOST_FOREACH (QPoint const& miss, misses) {
+	for (QPoint const& miss : misses) {
 		QRect src_rect(rect);
 		QRect dst_rect(rect.translated(-miss));
 		adjustToFit(rect, dst_rect, src_rect);
@@ -1248,7 +1247,7 @@ void hitMissReplaceInPlace(
 	BinaryImage const matches(hitMissMatch(img, src_surroundings, hits, misses));
 	QRect const rect(img.rect());
 		
-	BOOST_FOREACH (QPoint const& offset, white_to_black) {
+	for (QPoint const& offset : white_to_black) {
 		QRect src_rect(rect);
 		QRect dst_rect(rect.translated(offset));
 		adjustToFit(rect, dst_rect, src_rect);
@@ -1258,7 +1257,7 @@ void hitMissReplaceInPlace(
 		);
 	}
 	
-	BOOST_FOREACH (QPoint const& offset, black_to_white) {
+	for (QPoint const& offset : black_to_white) {
 		QRect src_rect(rect);
 		QRect dst_rect(rect.translated(offset));
 		adjustToFit(rect, dst_rect, src_rect);

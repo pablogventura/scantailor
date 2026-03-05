@@ -29,7 +29,6 @@
 #include <QDomElement>
 #include <QDomDocument>
 #ifndef Q_MOC_RUN
-#include <boost/foreach.hpp>
 #endif
 #include <algorithm>
 #include <math.h>
@@ -436,7 +435,7 @@ PageLayout::typeToString(Type const type)
 			break;
 	}
 	
-	return QString::fromAscii(str);
+	return QString::fromLatin1(str);
 }
 
 /**
@@ -458,7 +457,7 @@ PageLayout::extendToCover(QLineF const& line, QPolygonF const& poly)
 	double max = NumericTraits<double>::min();
 	ToLineProjector const projector(line);
 
-	BOOST_FOREACH(QPointF const& pt, poly) {
+	for (QPointF const& pt : poly) {
 		double const scalar = projector.projectionScalar(pt);
 		if (scalar < min) {
 			min = scalar;

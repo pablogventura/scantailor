@@ -46,7 +46,6 @@
 #ifndef Q_MOC_RUN
 #include <boost/array.hpp>
 #include <boost/bind.hpp>
-#include <boost/foreach.hpp>
 #endif
 #include <vector>
 #include <stdexcept>
@@ -113,7 +112,7 @@ DewarpingView::DewarpingView(
 	
 	InteractiveXSpline* splines[2] = { &m_topSpline, &m_bottomSpline };
 	int curve_idx = -1;
-	BOOST_FOREACH(InteractiveXSpline* spline, splines) {
+	for (InteractiveXSpline* spline : splines) {
 		++curve_idx;
 		spline->setModifiedCallback(boost::bind(&DewarpingView::curveModified, this, curve_idx));
 		spline->setDragFinishedCallback(boost::bind(&DewarpingView::dragFinished, this));
@@ -243,7 +242,7 @@ DewarpingView::onPaint(QPainter& painter, InteractionState const& interaction)
 				}
 			}
 
-			BOOST_FOREACH(QVector<QPointF> const& curve, curves) {
+			for (QVector<QPointF> const& curve : curves) {
 				painter.drawPolyline(curve);
 			}
 		} catch (std::runtime_error const&) {
@@ -379,7 +378,7 @@ DewarpingView::virtMarginArea(int margin_idx) const
 	double normal_max = max;
 	ToLineProjector const vert_line_projector(vert_boundary);
 	ToLineProjector const normal_projector(normal);
-	BOOST_FOREACH(QPointF const& pt, m_virtDisplayArea) {
+	for (QPointF const& pt : m_virtDisplayArea) {
 		double const p1 = vert_line_projector.projectionScalar(pt);
 		if (p1 < min) {
 			min = p1;

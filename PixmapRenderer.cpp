@@ -29,7 +29,7 @@
 #include <math.h>
 
 #ifdef ENABLE_OPENGL
-#	include <QGLWidget>
+#	include <QOpenGLWidget>
 #endif
 
 #ifdef Q_WS_X11
@@ -52,7 +52,7 @@ PixmapRenderer::drawPixmap(
 	QPaintDevice* const paint_dev = redir_dev ? redir_dev : dev;
 
 #if defined(ENABLE_OPENGL)
-	if (dynamic_cast<QGLWidget*>(paint_dev)) {
+	if (dynamic_cast<QOpenGLWidget*>(paint_dev)) {
 		drawPixmapNoXRender(painter, pixmap);
 		return;
 	}

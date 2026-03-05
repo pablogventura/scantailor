@@ -50,7 +50,7 @@ QString
 Utils::richTextForLink(
 	QString const& label, QString const& target)
 {
-	return QString::fromAscii(
+	return QString::fromLatin1(
 		"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\""
 		"\"http://www.w3.org/TR/REC-html40/strict.dtd\">"
 		"<html><head><meta name=\"qrichtext\" content=\"1\" />"
@@ -63,7 +63,7 @@ Utils::richTextForLink(
 void
 Utils::maybeCreateCacheDir(QString const& output_dir)
 {
-	QDir(output_dir).mkdir(QString::fromAscii("cache"));
+	QDir(output_dir).mkdir(QString::fromLatin1("cache"));
 	
 	// QDir::mkdir() returns false if the directory already exists,
 	// so to prevent confusion this function return void.

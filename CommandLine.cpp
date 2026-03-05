@@ -223,6 +223,7 @@ CommandLine::printHelp()
 	std::cout << "\t--output-dpi=<number>\t\t\t-- sets x and y output dpi. default: 600" << "\n";
 	std::cout << "\t\t--output-dpi-x=<number>" << "\n";
 	std::cout << "\t\t--output-dpi-y=<number>" << "\n";
+	std::cout << "\t--output-format=<tiff|png|jpeg>\t-- default: tiff" << "\n";
 	std::cout << "\t--color-mode=<black_and_white|color_grayscale|mixed>\n\t\t\t\t\t\t-- default: black_and_white" << "\n";
 	std::cout << "\t--white-margins\t\t\t\t-- default: false" << "\n";
 	std::cout << "\t--normalize-illumination\t\t-- default: false" << "\n";
@@ -483,6 +484,17 @@ CommandLine::fetchDepthPerception()
 		return output::DepthPerception();
 
 	return output::DepthPerception(m_options.value("depth-perception"));
+}
+
+output::OutputFormat
+CommandLine::getOutputFormat() const
+{
+	if (!hasOutputFormat())
+		return output::OUTPUT_TIFF;
+	QString v(m_options.value("output-format").trimmed().toLower());
+	if (v == QLatin1String("png")) return output::OUTPUT_PNG;
+	if (v == QLatin1String("jpg") || v == QLatin1String("jpeg")) return output::OUTPUT_JPEG;
+	return output::OUTPUT_TIFF;
 }
 
 bool

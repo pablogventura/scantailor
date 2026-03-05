@@ -30,7 +30,11 @@
 #include "DespeckleLevel.h"
 #include "Dpi.h"
 #include "ImageViewTab.h"
+#include "OutputFormat.h"
 #include <set>
+
+class QComboBox;
+class QGroupBox;
 
 namespace dewarping
 {
@@ -112,6 +116,8 @@ private slots:
 	void applyDepthPerceptionConfirmed(std::set<PageId> const& pages);
 
 	void depthPerceptionChangedSlot(int val);
+
+	void outputFormatChanged(int idx);
 private:
 	void handleDespeckleLevelChange(DespeckleLevel level);
 
@@ -122,7 +128,11 @@ private:
 	void updateColorsDisplay();
 
 	void updateDewarpingDisplay();
-	
+	void updateOutputFormatDisplay();
+
+	QGroupBox* m_outputFormatGroup;
+	QComboBox* m_outputFormatCombo;
+	OutputFormat m_outputFormat;
 	IntrusivePtr<Settings> m_ptrSettings;
 	PageSelectionAccessor m_pageSelectionAccessor;
 	PageId m_pageId;

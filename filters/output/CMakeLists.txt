@@ -3,7 +3,7 @@ PROJECT("Output Filter")
 INCLUDE_DIRECTORIES(BEFORE "${CMAKE_CURRENT_BINARY_DIR}")
 
 FILE(GLOB ui_files "ui/*.ui")
-QT4_WRAP_UI(ui_sources ${ui_files})
+QT5_WRAP_UI(ui_sources ${ui_files})
 SET_SOURCE_FILES_PROPERTIES(${ui_sources} PROPERTIES GENERATED TRUE)
 SOURCE_GROUP("UI Files" FILES ${ui_files})
 SOURCE_GROUP("Generated" FILES ${ui_sources})
@@ -52,7 +52,6 @@ SET(
 	DepthPerception.cpp DepthPerception.h
 )
 SOURCE_GROUP("Sources" FILES ${sources})
-QT4_AUTOMOC(${sources})
 
 ADD_LIBRARY(output STATIC ${sources} ${ui_sources})
 ADD_DEPENDENCIES(output toplevel_ui_sources)
