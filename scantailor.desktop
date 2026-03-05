@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Scan Tailor
+GenericName=Scan Post-Processing
+Comment=Interactive post-processing tool for scanned pages
+Exec=scantailor %F
+Icon=scantailor
+Categories=Graphics;Scanning;Utility;
+MimeType=image/tiff;image/png;image/jpeg;
+Terminal=false
+StartupNotify=true
+Keywords=scan;scanner;deskew;crop;pages;book;

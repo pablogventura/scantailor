@@ -1,5 +1,18 @@
 # Building Scan Tailor
 
+## Quick build (scripts in project root)
+
+From the project root you can use:
+
+| Script | Description |
+|--------|--------------|
+| `./build.sh` | Configure and build (Release). Creates `build/` if needed. |
+| `./build-deb.sh` | Build and generate a `.deb` package (Linux). |
+| `./test.sh` | Run tests (requires a prior `./build.sh`). |
+| `./clean.sh` | Remove the `build/` directory. |
+
+Example: `./build.sh` then run `./build/scantailor` or `./build/scantailor-cli`.
+
 ## Requirements
 
 - **CMake** 3.16 or later
@@ -67,7 +80,7 @@ cmake --build .
 cpack -G DEB
 ```
 
-The `.deb` will appear in `build/` (e.g. `scantailor_0.9.12_x86_64.deb`). Install with:
+The `.deb` will appear in `build/` (e.g. `scantailor_1.0.0_x86_64.deb`). Install with:
 
 ```bash
 sudo dpkg -i scantailor_*.deb

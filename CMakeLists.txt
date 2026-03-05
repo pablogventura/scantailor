@@ -607,6 +607,14 @@ IF(ENABLE_OPENGL)
 ENDIF()
 INSTALL(TARGETS scantailor scantailor-cli RUNTIME DESTINATION bin)
 
+# Desktop entry and icon (Linux) for application menu
+IF(UNIX AND NOT APPLE)
+	INSTALL(FILES "${CMAKE_SOURCE_DIR}/scantailor.desktop" DESTINATION share/applications)
+	INSTALL(FILES "${CMAKE_SOURCE_DIR}/resources/icons/appicon-about.png" DESTINATION share/icons/hicolor/48x48/apps RENAME scantailor.png)
+	INSTALL(FILES "${CMAKE_SOURCE_DIR}/resources/icons/appicon-about.png" DESTINATION share/icons/hicolor/128x128/apps RENAME scantailor.png)
+	INSTALL(FILES "${CMAKE_SOURCE_DIR}/resources/icons/appicon-about.png" DESTINATION share/pixmaps RENAME scantailor.png)
+ENDIF()
+
 IF(ENABLE_CRASH_REPORTER)
 	FIND_PATH(
 		SYMBOLS_PATH . PATHS "${build_outer_dir}/symbols"
