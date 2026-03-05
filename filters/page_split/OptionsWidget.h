@@ -66,11 +66,16 @@ public:
 		bool layoutTypeAutoDetected() const;
 		
 		void setLayoutTypeAutoDetected(bool val);
+		
+		double layoutConfidence() const { return m_layoutConfidence; }
+		
+		void setLayoutConfidence(double val) { m_layoutConfidence = val; }
 	private:
 		PageLayout m_pageLayout;
 		Dependencies m_deps;
 		AutoManualMode m_splitLineMode;
 		bool m_layoutTypeAutoDetected;
+		double m_layoutConfidence;
 	};
 	
 	

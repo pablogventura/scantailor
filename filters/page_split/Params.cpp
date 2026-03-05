@@ -25,10 +25,12 @@ namespace page_split
 
 Params::Params(PageLayout const& layout,
 	Dependencies const& deps,
-	AutoManualMode const split_line_mode)
+	AutoManualMode const split_line_mode,
+	double const layout_confidence)
 :	m_layout(layout),
 	m_deps(deps),
-	m_splitLineMode(split_line_mode)
+	m_splitLineMode(split_line_mode),
+	m_layoutConfidence(layout_confidence >= 0.0 && layout_confidence <= 1.0 ? layout_confidence : 1.0)
 {
 }
 
@@ -38,8 +40,17 @@ Params::Params(QDomElement const& el)
 	m_splitLineMode(
 		el.attribute("mode") == "manual"
 		? MODE_MANUAL : MODE_AUTO
-	)
+	),
+	m_layoutConfidence(1.0)
 {
+	QString const conf(el.attribute("confidence"));
+	if (!conf.isEmpty()) {
+		bool ok = false;
+		double v = conf.toDouble(&ok);
+		if (ok && v >= 0.0 && v <= 1.0) {
+			m_layoutConfidence = v;
+		}
+	}
 }
 
 Params::~Params()
@@ -53,6 +64,9 @@ Params::toXml(QDomDocument& doc, QString const& name) const
 	el.setAttribute(
 		"mode", m_splitLineMode == MODE_AUTO ? "auto" : "manual"
 	);
+	if (m_layoutConfidence < 1.0) {
+		el.setAttribute("confidence", QString::number(m_layoutConfidence, 'f', 2));
+	}
 	el.appendChild(m_layout.toXml(doc, "pages"));
 	el.appendChild(m_deps.toXml(doc, "dependencies"));
 	return el;

@@ -36,7 +36,8 @@ public:
 	// Member-wise copying is OK.
 	
 	Params(PageLayout const& layout,
-		Dependencies const& deps, AutoManualMode split_line_mode);
+		Dependencies const& deps, AutoManualMode split_line_mode,
+		double layout_confidence = 1.0);
 	
 	Params(QDomElement const& el);
 	
@@ -48,11 +49,17 @@ public:
 	
 	AutoManualMode splitLineMode() const { return m_splitLineMode; }
 	
+	/** Detection confidence [0,1]; 1 = high. Used when layout was auto-detected. */
+	double layoutConfidence() const { return m_layoutConfidence; }
+	
+	bool isLowConfidence() const { return m_layoutConfidence >= 0.0 && m_layoutConfidence < 0.5; }
+	
 	QDomElement toXml(QDomDocument& doc, QString const& name) const;
 private:
 	PageLayout m_layout;
 	Dependencies m_deps;
 	AutoManualMode m_splitLineMode;
+	double m_layoutConfidence;
 };
 
 } // namespace page_split

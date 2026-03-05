@@ -78,13 +78,15 @@ private:
 		ImageTransformation const& pre_xform, DebugImages* dbg,
 		double* out_confidence = nullptr);
 		
+	/** If force_num_pages is 1 or 2, overrides num_pages when layout_type is AUTO. */
 	static PageLayout cutAtWhitespace(
 		LayoutType layout_type, QImage const& input,
 		ImageTransformation const& pre_xform,
 		imageproc::BinaryThreshold const bw_threshold,
 		DebugImages* dbg,
 		double* out_confidence = nullptr,
-		double hint_split_x = -1.0);
+		double hint_split_x = -1.0,
+		int force_num_pages = -1);
 	
 	static PageLayout cutAtWhitespaceDeskewed150(
 		LayoutType layout_type, int num_pages,

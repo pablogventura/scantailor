@@ -164,6 +164,13 @@ OptionsWidget::postUpdateUI(UiData const& ui_data)
 	
 	if (ui_data.layoutTypeAutoDetected()) {
 		scopeLabel->setText(tr("Auto detected"));
+		if (ui_data.layoutConfidence() < 0.5) {
+			scopeLabel->setToolTip(tr("Layout was auto-detected with low confidence. Please verify the split is correct."));
+		} else {
+			scopeLabel->setToolTip(QString());
+		}
+	} else {
+		scopeLabel->setToolTip(QString());
 	}
 }
 
@@ -339,7 +346,8 @@ OptionsWidget::commitCurrentParams()
 
 OptionsWidget::UiData::UiData()
 :	m_splitLineMode(MODE_AUTO),
-	m_layoutTypeAutoDetected(false)
+	m_layoutTypeAutoDetected(false),
+	m_layoutConfidence(1.0)
 {
 }
 

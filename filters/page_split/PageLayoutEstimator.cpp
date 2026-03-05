@@ -265,8 +265,21 @@ PageLayoutEstimator::estimatePageLayout(
 		return *layout;
 	}
 	
-	return cutAtWhitespace(layout_type, input, pre_xform, bw_threshold, dbg,
-	                      out_confidence, hint_split_x);
+	int const advised_pages = (layout_type == AUTO_LAYOUT_TYPE)
+		? numPages(layout_type, pre_xform) : 0;
+	PageLayout result = cutAtWhitespace(layout_type, input, pre_xform, bw_threshold, dbg,
+	                                    out_confidence, hint_split_x, -1);
+	// If AUTO and we assumed 2 pages but confidence is low, retry as single page
+	if (layout_type == AUTO_LAYOUT_TYPE && advised_pages == 2 && out_confidence && *out_confidence < 0.35) {
+		double single_conf = 0.0;
+		PageLayout single_layout = cutAtWhitespace(layout_type, input, pre_xform, bw_threshold, dbg,
+		                                           &single_conf, hint_split_x, 1);
+		if (single_conf > *out_confidence) {
+			result = single_layout;
+			*out_confidence = single_conf;
+		}
+	}
+	return result;
 }
 
 namespace
@@ -406,7 +419,8 @@ PageLayoutEstimator::cutAtWhitespace(
 	BinaryThreshold const bw_threshold,
 	DebugImages* const dbg,
 	double* out_confidence,
-	double hint_split_x)
+	double hint_split_x,
+	int const force_num_pages)
 {
 	if (out_confidence) *out_confidence = 0.0;
 	QTransform xform;
@@ -465,7 +479,10 @@ PageLayoutEstimator::cutAtWhitespace(
 		}
 	}
 	
-	int const num_pages = numPages(layout_type, pre_xform);
+	int num_pages = numPages(layout_type, pre_xform);
+	if (force_num_pages == 1 || force_num_pages == 2) {
+		num_pages = force_num_pages;
+	}
 	PageLayout const layout(
 		cutAtWhitespaceDeskewed150(
 			layout_type, num_pages, img,
@@ -634,20 +651,26 @@ bool
 PageLayoutEstimator::checkForLeftOffcut(BinaryImage const& image)
 {
 	int const margin = 2; // Some scanners leave garbage near page borders.
-	int const width = 3;
-	QRect rect(margin, 0, width, image.height());
+	int const strip_width = 3;
+	QRect rect(margin, 0, strip_width, image.height());
 	rect.adjust(0, margin, 0, -margin);
-	return image.countBlackPixels(rect) != 0;
+	if (rect.isEmpty()) return false;
+	int const area = rect.width() * rect.height();
+	int const min_black = std::max(10, (int)(0.02 * area)); // avoid dust/single pixels
+	return image.countBlackPixels(rect) >= min_black;
 }
 
 bool
 PageLayoutEstimator::checkForRightOffcut(BinaryImage const& image)
 {
 	int const margin = 2; // Some scanners leave garbage near page borders.
-	int const width = 3;
-	QRect rect(image.width() - margin - width, 0, width, image.height());
+	int const strip_width = 3;
+	QRect rect(image.width() - margin - strip_width, 0, strip_width, image.height());
 	rect.adjust(0, margin, 0, -margin);
-	return image.countBlackPixels(rect) != 0;
+	if (rect.isEmpty()) return false;
+	int const area = rect.width() * rect.height();
+	int const min_black = std::max(10, (int)(0.02 * area)); // avoid dust/single pixels
+	return image.countBlackPixels(rect) >= min_black;
 }
 
 void

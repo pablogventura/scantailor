@@ -174,7 +174,7 @@ Task::process(TaskStatus const& status, FilterData const& data)
 			break;
 		}
 			
-		Params const new_params(new_layout, deps, MODE_AUTO);
+		Params const new_params(new_layout, deps, MODE_AUTO, confidence);
 		Settings::UpdateAction update;
 		update.setParams(new_params);
 
@@ -215,6 +215,7 @@ Task::process(TaskStatus const& status, FilterData const& data)
 	);
 	ui_data.setPageLayout(layout);
 	ui_data.setSplitLineMode(record.params()->splitLineMode());
+	ui_data.setLayoutConfidence(record.params()->layoutConfidence());
 	
 	m_ptrPages->setLayoutTypeFor(m_pageInfo.imageId(), toPageLayoutType(layout));
 	
