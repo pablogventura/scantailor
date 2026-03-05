@@ -1474,13 +1474,38 @@ OutputGenerator::calcBinarizationThreshold(
 BinaryImage
 OutputGenerator::binarize(QImage const& image, BinaryImage const& mask) const
 {
-	GrayscaleHistogram hist(image, mask);
-	BinaryThreshold const bw_thresh(BinaryThreshold::otsuThreshold(hist));
-	BinaryImage binarized(image, adjustThreshold(bw_thresh));
-	
+	BlackWhiteOptions const& opt = m_colorParams.blackWhiteOptions();
+	BinaryImage binarized;
+
+	switch (opt.binarizationMethod()) {
+		case SAUVOLA: {
+			int w = opt.windowSize();
+			if (w < 3) w = 3;
+			if (w % 2 == 0) ++w;
+			binarized = binarizeSauvola(image, QSize(w, w), opt.sauvolaCoef());
+			break;
+		}
+		case WOLF: {
+			int w = opt.windowSize();
+			if (w < 3) w = 3;
+			if (w % 2 == 0) ++w;
+			binarized = binarizeWolf(image, QSize(w, w),
+				(unsigned char)opt.wolfLowerBound(),
+				(unsigned char)opt.wolfUpperBound(),
+				opt.wolfCoef());
+			break;
+		}
+		default: {
+			GrayscaleHistogram hist(image, mask);
+			BinaryThreshold const bw_thresh(BinaryThreshold::otsuThreshold(hist));
+			binarized = BinaryImage(image, adjustThreshold(bw_thresh));
+			break;
+		}
+	}
+
 	// Fill masked out areas with white.
 	rasterOp<RopAnd<RopSrc, RopDst> >(binarized, mask);
-	
+
 	return binarized;
 }
 
@@ -1492,8 +1517,28 @@ OutputGenerator::binarize(QImage const& image,
 	path.addPolygon(crop_area);
 	
 	if (path.contains(image.rect()) && !mask) {
-		BinaryThreshold const bw_thresh(BinaryThreshold::otsuThreshold(image));
-		return BinaryImage(image, adjustThreshold(bw_thresh));
+		BlackWhiteOptions const& opt = m_colorParams.blackWhiteOptions();
+		switch (opt.binarizationMethod()) {
+			case SAUVOLA: {
+				int w = opt.windowSize();
+				if (w < 3) w = 3;
+				if (w % 2 == 0) ++w;
+				return binarizeSauvola(image, QSize(w, w), opt.sauvolaCoef());
+			}
+			case WOLF: {
+				int w = opt.windowSize();
+				if (w < 3) w = 3;
+				if (w % 2 == 0) ++w;
+				return binarizeWolf(image, QSize(w, w),
+					(unsigned char)opt.wolfLowerBound(),
+					(unsigned char)opt.wolfUpperBound(),
+					opt.wolfCoef());
+			}
+			default: {
+				BinaryThreshold const bw_thresh(BinaryThreshold::otsuThreshold(image));
+				return BinaryImage(image, adjustThreshold(bw_thresh));
+			}
+		}
 	} else {
 		BinaryImage modified_mask(image.size(), BLACK);
 		PolygonRasterizer::fillExcept(modified_mask, WHITE, crop_area, Qt::WindingFill);

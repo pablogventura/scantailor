@@ -22,6 +22,8 @@
 #include "Settings.h"
 #include "PageInfo.h"
 #include "ImageTransformation.h"
+#include "ApplicationSettings.h"
+#include "ThumbnailBase.h"
 #include "filter_dc/AbstractFilterDataCollector.h"
 #include "filter_dc/ThumbnailCollector.h"
 #include "filters/select_content/CacheDrivenTask.h"
@@ -51,15 +53,21 @@ CacheDrivenTask::process(
 	if (!params.get() || !deps.matches(params->dependencies())) {
 		
 		if (ThumbnailCollector* thumb_col = dynamic_cast<ThumbnailCollector*>(collector)) {
-			thumb_col->processThumbnail(
-				std::unique_ptr<QGraphicsItem>(
-					new IncompleteThumbnail(
-						thumb_col->thumbnailCache(),
-						thumb_col->maxLogicalThumbSize(),
-						page_info.imageId(), xform
-					)
-				)
+			std::unique_ptr<QGraphicsItem> thumb(new IncompleteThumbnail(
+				thumb_col->thumbnailCache(),
+				thumb_col->maxLogicalThumbSize(),
+				page_info.imageId(), xform
+			));
+			bool const deviant = m_ptrSettings->deviationProvider().isDeviant(
+				page_info.id(),
+				ApplicationSettings::getInstance().getDeskewDeviationCoef(),
+				ApplicationSettings::getInstance().getDeskewDeviationThreshold(),
+				false
 			);
+			if (ThumbnailBase* tb = dynamic_cast<ThumbnailBase*>(thumb.get())) {
+				tb->setDeviant(deviant);
+			}
+			thumb_col->processThumbnail(std::move(thumb));
 		}
 		
 		return;
@@ -74,15 +82,21 @@ CacheDrivenTask::process(
 	}
 	
 	if (ThumbnailCollector* thumb_col = dynamic_cast<ThumbnailCollector*>(collector)) {
-		thumb_col->processThumbnail(
-			std::unique_ptr<QGraphicsItem>(
-				new Thumbnail(
-					thumb_col->thumbnailCache(),
-					thumb_col->maxLogicalThumbSize(),
-					page_info.imageId(), new_xform
-				)
-			)
+		std::unique_ptr<QGraphicsItem> thumb(new Thumbnail(
+			thumb_col->thumbnailCache(),
+			thumb_col->maxLogicalThumbSize(),
+			page_info.imageId(), new_xform
+		));
+		bool const deviant = m_ptrSettings->deviationProvider().isDeviant(
+			page_info.id(),
+			ApplicationSettings::getInstance().getDeskewDeviationCoef(),
+			ApplicationSettings::getInstance().getDeskewDeviationThreshold(),
+			false
 		);
+		if (ThumbnailBase* tb = dynamic_cast<ThumbnailBase*>(thumb.get())) {
+			tb->setDeviant(deviant);
+		}
+		thumb_col->processThumbnail(std::move(thumb));
 	}
 }
 

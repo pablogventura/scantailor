@@ -25,13 +25,37 @@ namespace output
 {
 
 BlackWhiteOptions::BlackWhiteOptions()
-:	m_thresholdAdjustment(0)
+:	m_thresholdAdjustment(0),
+	m_binarizationMethod(OTSU),
+	m_windowSize(25),
+	m_sauvolaCoef(0.34),
+	m_wolfLowerBound(1),
+	m_wolfUpperBound(254),
+	m_wolfCoef(0.3)
 {
 }
 
 BlackWhiteOptions::BlackWhiteOptions(QDomElement const& el)
-:	m_thresholdAdjustment(el.attribute("thresholdAdj").toInt())
+:	m_thresholdAdjustment(el.attribute("thresholdAdj").toInt()),
+	m_binarizationMethod(parseBinarizationMethod(el.attribute("method", "otsu"))),
+	m_windowSize(25),
+	m_sauvolaCoef(0.34),
+	m_wolfLowerBound(1),
+	m_wolfUpperBound(254),
+	m_wolfCoef(0.3)
 {
+	QString const ws(el.attribute("windowSize"));
+	if (!ws.isEmpty()) m_windowSize = ws.toInt();
+	QString const sc(el.attribute("sauvolaCoef"));
+	if (!sc.isEmpty()) m_sauvolaCoef = sc.toDouble();
+	QString const wlb(el.attribute("wolfLowerBound"));
+	if (!wlb.isEmpty()) m_wolfLowerBound = wlb.toInt();
+	QString const wub(el.attribute("wolfUpperBound"));
+	if (!wub.isEmpty()) m_wolfUpperBound = wub.toInt();
+	QString const wc(el.attribute("wolfCoef"));
+	if (!wc.isEmpty()) m_wolfCoef = wc.toDouble();
+	if (m_windowSize < 3) m_windowSize = 3;
+	if (m_windowSize % 2 == 0) ++m_windowSize;
 }
 
 QDomElement
@@ -39,17 +63,43 @@ BlackWhiteOptions::toXml(QDomDocument& doc, QString const& name) const
 {
 	QDomElement el(doc.createElement(name));
 	el.setAttribute("thresholdAdj", m_thresholdAdjustment);
+	el.setAttribute("method", formatBinarizationMethod(m_binarizationMethod));
+	el.setAttribute("windowSize", m_windowSize);
+	el.setAttribute("sauvolaCoef", m_sauvolaCoef);
+	el.setAttribute("wolfLowerBound", m_wolfLowerBound);
+	el.setAttribute("wolfUpperBound", m_wolfUpperBound);
+	el.setAttribute("wolfCoef", m_wolfCoef);
 	return el;
+}
+
+BinarizationMethod
+BlackWhiteOptions::parseBinarizationMethod(QString const& str)
+{
+	if (str == QLatin1String("sauvola")) return SAUVOLA;
+	if (str == QLatin1String("wolf")) return WOLF;
+	return OTSU;
+}
+
+QString
+BlackWhiteOptions::formatBinarizationMethod(BinarizationMethod method)
+{
+	switch (method) {
+		case SAUVOLA: return QString::fromLatin1("sauvola");
+		case WOLF: return QString::fromLatin1("wolf");
+		default: return QString::fromLatin1("otsu");
+	}
 }
 
 bool
 BlackWhiteOptions::operator==(BlackWhiteOptions const& other) const
 {
-	if (m_thresholdAdjustment != other.m_thresholdAdjustment) {
-		return false;
-	}
-	
-	return true;
+	return m_thresholdAdjustment == other.m_thresholdAdjustment
+		&& m_binarizationMethod == other.m_binarizationMethod
+		&& m_windowSize == other.m_windowSize
+		&& m_sauvolaCoef == other.m_sauvolaCoef
+		&& m_wolfLowerBound == other.m_wolfLowerBound
+		&& m_wolfUpperBound == other.m_wolfUpperBound
+		&& m_wolfCoef == other.m_wolfCoef;
 }
 
 bool

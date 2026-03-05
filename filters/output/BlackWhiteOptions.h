@@ -26,6 +26,8 @@ class QDomElement;
 namespace output
 {
 
+enum BinarizationMethod { OTSU, SAUVOLA, WOLF };
+
 class BlackWhiteOptions
 {
 public:
@@ -36,14 +38,37 @@ public:
 	QDomElement toXml(QDomDocument& doc, QString const& name) const;
 	
 	int thresholdAdjustment() const { return m_thresholdAdjustment; }
-	
 	void setThresholdAdjustment(int val) { m_thresholdAdjustment = val; }
+
+	BinarizationMethod binarizationMethod() const { return m_binarizationMethod; }
+	void setBinarizationMethod(BinarizationMethod method) { m_binarizationMethod = method; }
+
+	int windowSize() const { return m_windowSize; }
+	void setWindowSize(int size) { m_windowSize = size; }
+
+	double sauvolaCoef() const { return m_sauvolaCoef; }
+	void setSauvolaCoef(double k) { m_sauvolaCoef = k; }
+
+	int wolfLowerBound() const { return m_wolfLowerBound; }
+	void setWolfLowerBound(int val) { m_wolfLowerBound = val; }
+	int wolfUpperBound() const { return m_wolfUpperBound; }
+	void setWolfUpperBound(int val) { m_wolfUpperBound = val; }
+	double wolfCoef() const { return m_wolfCoef; }
+	void setWolfCoef(double k) { m_wolfCoef = k; }
 		
 	bool operator==(BlackWhiteOptions const& other) const;
-	
 	bool operator!=(BlackWhiteOptions const& other) const;
 private:
+	static BinarizationMethod parseBinarizationMethod(QString const& str);
+	static QString formatBinarizationMethod(BinarizationMethod method);
+
 	int m_thresholdAdjustment;
+	BinarizationMethod m_binarizationMethod;
+	int m_windowSize;
+	double m_sauvolaCoef;
+	int m_wolfLowerBound;
+	int m_wolfUpperBound;
+	double m_wolfCoef;
 };
 
 } // namespace output

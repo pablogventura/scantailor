@@ -49,6 +49,8 @@ public:
 	
 	virtual void paint(QPainter* painter,
 		QStyleOptionGraphicsItem const* option, QWidget *widget);
+
+	void setDeviant(bool deviant) { m_deviant = deviant; }
 protected:
 	/**
 	 * \brief A hook to allow subclasses to draw over the thumbnail.
@@ -96,6 +98,7 @@ private:
 	class LoadCompletionHandler;
 	
 	void handleLoadResult(ThumbnailLoadResult const& result);
+	void paintDeviant(QPainter& painter);
 	
 	IntrusivePtr<ThumbnailPixmapCache> m_ptrThumbnailCache;
 	QSizeF m_maxSize;
@@ -111,6 +114,7 @@ private:
 	
 	boost::shared_ptr<LoadCompletionHandler> m_ptrCompletionHandler;
 	bool m_extendedClipArea;
+	bool m_deviant;
 };
 
 #endif

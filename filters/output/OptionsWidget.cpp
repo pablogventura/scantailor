@@ -17,6 +17,7 @@
 */
 
 #include "OptionsWidget.h"
+#include "BlackWhiteOptions.h"
 #include "ChangeDpiDialog.h"
 #include "ChangeDewarpingDialog.h"
 #include "ApplyColorsDialog.h"
@@ -182,6 +183,15 @@ OptionsWidget::OptionsWidget(
 		thresholdSlider, SIGNAL(sliderReleased()),
 		this, SLOT(bwThresholdChanged())
 	);
+	binarizationMethodCombo->addItem(tr("Otsu"), OTSU);
+	binarizationMethodCombo->addItem(tr("Sauvola"), SAUVOLA);
+	binarizationMethodCombo->addItem(tr("Wolf"), WOLF);
+	connect(binarizationMethodCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(binarizationMethodChanged(int)));
+	connect(windowSizeSB, SIGNAL(valueChanged(int)), this, SLOT(windowSizeChanged(int)));
+	connect(sauvolaCoefSB, SIGNAL(valueChanged(double)), this, SLOT(sauvolaCoefChanged(double)));
+	connect(wolfLowerSB, SIGNAL(valueChanged(int)), this, SLOT(wolfLowerChanged(int)));
+	connect(wolfUpperSB, SIGNAL(valueChanged(int)), this, SLOT(wolfUpperChanged(int)));
+	connect(wolfCoefSB, SIGNAL(valueChanged(double)), this, SLOT(wolfCoefChanged(double)));
 	connect(
 		applyColorsButton, SIGNAL(clicked()),
 		this, SLOT(applyColorsButtonClicked())
@@ -441,6 +451,88 @@ OptionsWidget::bwThresholdChanged()
 	emit reloadRequested();
 	
 	emit invalidateThumbnail(m_pageId);
+}
+
+void
+OptionsWidget::updateBinarizationMethodVisibility()
+{
+	BinarizationMethod method = OTSU;
+	int idx = binarizationMethodCombo->currentIndex();
+	if (idx >= 0) {
+		QVariant v = binarizationMethodCombo->itemData(idx);
+		if (v.isValid()) method = static_cast<BinarizationMethod>(v.toInt());
+	}
+	bool const isSauvola = (method == SAUVOLA);
+	bool const isWolf = (method == WOLF);
+	windowSizeRow->setVisible(isSauvola || isWolf);
+	sauvolaRow->setVisible(isSauvola);
+	wolfRow->setVisible(isWolf);
+}
+
+void
+OptionsWidget::commitBinarizationOptions()
+{
+	BlackWhiteOptions opt(m_colorParams.blackWhiteOptions());
+	int idx = binarizationMethodCombo->currentIndex();
+	if (idx >= 0) {
+		QVariant v = binarizationMethodCombo->itemData(idx);
+		if (v.isValid()) opt.setBinarizationMethod(static_cast<BinarizationMethod>(v.toInt()));
+	}
+	int w = windowSizeSB->value();
+	if (w < 3) w = 3;
+	if (w % 2 == 0) ++w;
+	opt.setWindowSize(w);
+	opt.setSauvolaCoef(sauvolaCoefSB->value());
+	opt.setWolfLowerBound(wolfLowerSB->value());
+	opt.setWolfUpperBound(wolfUpperSB->value());
+	opt.setWolfCoef(wolfCoefSB->value());
+	m_colorParams.setBlackWhiteOptions(opt);
+	m_ptrSettings->setColorParams(m_pageId, m_colorParams);
+	emit reloadRequested();
+	emit invalidateThumbnail(m_pageId);
+}
+
+void
+OptionsWidget::binarizationMethodChanged(int idx)
+{
+	Q_UNUSED(idx);
+	updateBinarizationMethodVisibility();
+	commitBinarizationOptions();
+}
+
+void
+OptionsWidget::windowSizeChanged(int val)
+{
+	Q_UNUSED(val);
+	commitBinarizationOptions();
+}
+
+void
+OptionsWidget::sauvolaCoefChanged(double val)
+{
+	Q_UNUSED(val);
+	commitBinarizationOptions();
+}
+
+void
+OptionsWidget::wolfLowerChanged(int val)
+{
+	Q_UNUSED(val);
+	commitBinarizationOptions();
+}
+
+void
+OptionsWidget::wolfUpperChanged(int val)
+{
+	Q_UNUSED(val);
+	commitBinarizationOptions();
+}
+
+void
+OptionsWidget::wolfCoefChanged(double val)
+{
+	Q_UNUSED(val);
+	commitBinarizationOptions();
 }
 
 void
@@ -784,10 +876,29 @@ OptionsWidget::updateColorsDisplay()
 				break;
 		}
 
+		BlackWhiteOptions const& bwOpt = m_colorParams.blackWhiteOptions();
 		ScopedIncDec<int> const guard(m_ignoreThresholdChanges);
-		thresholdSlider->setValue(
-			m_colorParams.blackWhiteOptions().thresholdAdjustment()
-		);
+		thresholdSlider->setValue(bwOpt.thresholdAdjustment());
+		binarizationMethodCombo->blockSignals(true);
+		windowSizeSB->blockSignals(true);
+		sauvolaCoefSB->blockSignals(true);
+		wolfLowerSB->blockSignals(true);
+		wolfUpperSB->blockSignals(true);
+		wolfCoefSB->blockSignals(true);
+		int methodIdx = binarizationMethodCombo->findData(bwOpt.binarizationMethod());
+		if (methodIdx >= 0) binarizationMethodCombo->setCurrentIndex(methodIdx);
+		windowSizeSB->setValue(bwOpt.windowSize());
+		sauvolaCoefSB->setValue(bwOpt.sauvolaCoef());
+		wolfLowerSB->setValue(bwOpt.wolfLowerBound());
+		wolfUpperSB->setValue(bwOpt.wolfUpperBound());
+		wolfCoefSB->setValue(bwOpt.wolfCoef());
+		binarizationMethodCombo->blockSignals(false);
+		windowSizeSB->blockSignals(false);
+		sauvolaCoefSB->blockSignals(false);
+		wolfLowerSB->blockSignals(false);
+		wolfUpperSB->blockSignals(false);
+		wolfCoefSB->blockSignals(false);
+		updateBinarizationMethodVisibility();
 	}
 	
 	colorModeSelector->blockSignals(false);

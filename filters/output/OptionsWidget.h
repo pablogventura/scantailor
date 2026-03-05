@@ -99,6 +99,13 @@ private slots:
 	
 	void bwThresholdChanged();
 
+	void binarizationMethodChanged(int idx);
+	void windowSizeChanged(int val);
+	void sauvolaCoefChanged(double val);
+	void wolfLowerChanged(int val);
+	void wolfUpperChanged(int val);
+	void wolfCoefChanged(double val);
+
 	void despeckleOffSelected();
 
 	void despeckleCautiousSelected();
@@ -133,6 +140,8 @@ private:
 	void updateDpiDisplay();
 
 	void updateColorsDisplay();
+	void updateBinarizationMethodVisibility();
+	void commitBinarizationOptions();
 
 	void updateDewarpingDisplay();
 	void updateOutputFormatDisplay();

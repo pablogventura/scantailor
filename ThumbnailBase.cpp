@@ -17,6 +17,7 @@
 */
 
 #include "ThumbnailBase.h"
+#include "ApplicationSettings.h"
 #include "ThumbnailPixmapCache.h"
 #include "ThumbnailLoadResult.h"
 #include "NonCopyable.h"
@@ -38,6 +39,7 @@
 #include <QStyle>
 #include <QApplication>
 #include <QPointF>
+#include <QFont>
 #include <Qt>
 #include <QDebug>
 #include <math.h>
@@ -67,7 +69,8 @@ ThumbnailBase::ThumbnailBase(
 	m_maxSize(max_size),
 	m_imageId(image_id),
 	m_imageXform(image_xform),
-	m_extendedClipArea(false)
+	m_extendedClipArea(false),
+	m_deviant(false)
 {
 	setImageXform(m_imageXform);
 }
@@ -112,6 +115,9 @@ ThumbnailBase::paint(QPainter* painter,
 		painter->fillRect(rect, QColor(0xff, 0xff, 0xff));
 		
 		paintOverImage(*painter, image_to_display, thumb_to_display);
+		if (m_deviant && ApplicationSettings::getInstance().isHighlightDeviationEnabled()) {
+			paintDeviant(*painter);
+		}
 		return;
 	}
 	
@@ -223,6 +229,10 @@ ThumbnailBase::paint(QPainter* painter,
 	painter->setRenderHint(QPainter::SmoothPixmapTransform, false);
 	painter->setCompositionMode(QPainter::CompositionMode_SourceOver);
 	painter->drawPixmap(display_rect.topLeft(), temp_pixmap);
+	if (m_deviant && ApplicationSettings::getInstance().isHighlightDeviationEnabled()) {
+		painter->setWorldTransform(thumb_to_display);
+		paintDeviant(*painter);
+	}
 }
 
 void
@@ -241,6 +251,23 @@ ThumbnailBase::setImageXform(ImageTransformation const& image_xform)
 	double const y_post_scale = scaled_size.height() / unscaled_size.height();
 	m_postScaleXform.reset();
 	m_postScaleXform.scale(x_post_scale, y_post_scale);
+}
+
+void
+ThumbnailBase::paintDeviant(QPainter& painter)
+{
+	if (!ApplicationSettings::getInstance().isHighlightDeviationEnabled()) {
+		return;
+	}
+	QPen pen(QColor(0xdd, 0x00, 0x00, 0xcc));
+	pen.setWidth(5);
+	pen.setCosmetic(true);
+	painter.setPen(pen);
+	QFont font(QString::fromLatin1("Serif"));
+	font.setWeight(QFont::Bold);
+	font.setPixelSize(static_cast<int>(boundingRect().width() / 2));
+	painter.setFont(font);
+	painter.drawText(boundingRect(), Qt::AlignCenter, QString::fromLatin1("*"));
 }
 
 void

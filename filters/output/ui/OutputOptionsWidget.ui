@@ -166,7 +166,10 @@
            <item>
             <widget class="QCheckBox" name="whiteMarginsCB">
              <property name="text">
-              <string>White margins</string>
+              <string>Fill outside content with white</string>
+             </property>
+             <property name="toolTip">
+              <string>If unchecked, the estimated background color is used for areas outside the content.</string>
              </property>
             </widget>
            </item>
@@ -198,6 +201,150 @@
       <item>
        <widget class="QWidget" name="bwOptions" native="true">
         <layout class="QVBoxLayout" name="verticalLayout">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_bwMethod">
+           <item>
+            <widget class="QLabel" name="binarizationMethodLabel">
+             <property name="text">
+              <string>Binarization method:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="binarizationMethodCombo"/>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QWidget" name="windowSizeRow" native="true">
+           <layout class="QHBoxLayout" name="horizontalLayout_windowSize">
+            <item>
+             <widget class="QLabel" name="windowSizeLabel">
+              <property name="text">
+               <string>Window size:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="windowSizeSB">
+              <property name="minimum">
+               <number>3</number>
+              </property>
+              <property name="maximum">
+               <number>99</number>
+              </property>
+              <property name="value">
+               <number>25</number>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QWidget" name="sauvolaRow" native="true">
+           <layout class="QHBoxLayout" name="horizontalLayout_sauvola">
+            <item>
+             <widget class="QLabel" name="sauvolaCoefLabel">
+              <property name="text">
+               <string>Sauvola k:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QDoubleSpinBox" name="sauvolaCoefSB">
+              <property name="minimum">
+               <double>0.10</double>
+              </property>
+              <property name="maximum">
+               <double>0.80</double>
+              </property>
+              <property name="singleStep">
+               <double>0.01</double>
+              </property>
+              <property name="value">
+               <double>0.34</double>
+              </property>
+              <property name="decimals">
+               <number>2</number>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QWidget" name="wolfRow" native="true">
+           <layout class="QHBoxLayout" name="horizontalLayout_wolf">
+            <item>
+             <widget class="QLabel" name="wolfLowerLabel">
+              <property name="text">
+               <string>Wolf lower:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="wolfLowerSB">
+              <property name="minimum">
+               <number>0</number>
+              </property>
+              <property name="maximum">
+               <number>255</number>
+              </property>
+              <property name="value">
+               <number>1</number>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="wolfUpperLabel">
+              <property name="text">
+               <string>Upper:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="wolfUpperSB">
+              <property name="minimum">
+               <number>0</number>
+              </property>
+              <property name="maximum">
+               <number>255</number>
+              </property>
+              <property name="value">
+               <number>254</number>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="wolfCoefLabel">
+              <property name="text">
+               <string>k:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QDoubleSpinBox" name="wolfCoefSB">
+              <property name="minimum">
+               <double>0.10</double>
+              </property>
+              <property name="maximum">
+               <double>0.80</double>
+              </property>
+              <property name="singleStep">
+               <double>0.01</double>
+              </property>
+              <property name="value">
+               <double>0.30</double>
+              </property>
+              <property name="decimals">
+               <number>2</number>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_12">
            <item>
