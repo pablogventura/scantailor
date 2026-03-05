@@ -92,7 +92,6 @@
 #include "ScopedIncDec.h"
 #include "ui_AboutDialog.h"
 #include "ui_RemovePagesDialog.h"
-#include "ui_BatchProcessingLowerPanel.h"
 #include "config.h"
 #include "version.h"
 #ifndef Q_MOC_RUN
@@ -182,20 +181,20 @@ MainWindow::MainWindow()
 	actionSettings->setVisible(false);
 #endif
 
-	createBatchProcessingWidget();
 	m_ptrProcessingIndicationWidget.reset(new ProcessingIndicationWidget);
-	
-	filterList->setStages(m_ptrStages);
-	filterList->selectRow(0);
-	
+	m_checkBeepWhenFinished = [this]() { return beepWhenFinished->isChecked(); };
+
+	pipelineStrip->setStages(m_ptrStages);
+	pipelineStrip->setSelectedStage(0);
+
 	setupThumbView(); // Expects m_ptrThumbSequence to be initialized.
-	
+
 	m_ptrTabbedDebugImages.reset(new TabbedDebugImages);
-	
+
 	m_debug = actionDebug->isChecked();
 	m_pImageFrameLayout = new QStackedLayout(imageViewFrame);
 	m_pOptionsFrameLayout = new QStackedLayout(filterOptions);
-	
+
 	addAction(actionFirstPage);
 	addAction(actionLastPage);
 	addAction(actionNextPage);
@@ -217,15 +216,18 @@ MainWindow::MainWindow()
 		&OutOfMemoryHandler::instance(),
 		SIGNAL(outOfMemory()), SLOT(handleOutOfMemorySituation())
 	);
-	
+
 	connect(
-		filterList->selectionModel(),
-		SIGNAL(selectionChanged(QItemSelection const&, QItemSelection const&)),
-		this, SLOT(filterSelectionChanged(QItemSelection const&))
+		pipelineStrip, SIGNAL(stageSelected(int)),
+		this, SLOT(pipelineStageSelected(int))
 	);
 	connect(
-		filterList, SIGNAL(launchBatchProcessing()),
+		batchProcessAllButton, SIGNAL(clicked()),
 		this, SLOT(startBatchProcessing())
+	);
+	connect(
+		batchStopButton, SIGNAL(clicked()),
+		this, SLOT(stopBatchProcessing())
 	);
 	
 	connect(
@@ -301,6 +303,11 @@ MainWindow::MainWindow()
 		this, SLOT(close())
 	);
 	
+	// Initial splitter sizes: left 240, center flexible, right 300
+	QList<int> splitterSizes;
+	splitterSizes << 240 << 600 << 300;
+	splitter->setSizes(splitterSizes);
+
 	updateProjectActions();
 	updateWindowTitle();
 	updateMainArea();
@@ -383,21 +390,12 @@ MainWindow::switchToNewProject(
 		project_reader->readFilterSettings(m_ptrStages->filters());
 	}
 	
-	// Connect the filter list model to the view and select
-	// the first item.
+	// Connect the pipeline strip and select the first stage.
 	{
 		ScopedIncDec<int> guard(m_ignoreSelectionChanges);
-		filterList->setStages(m_ptrStages);
-		filterList->selectRow(0);
+		pipelineStrip->setStages(m_ptrStages);
+		pipelineStrip->setSelectedStage(0);
 		m_curFilter = 0;
-		
-		// Setting a data model also implicitly sets a new
-		// selection model, so we have to reconnect to it.
-		connect(
-			filterList->selectionModel(),
-			SIGNAL(selectionChanged(QItemSelection const&, QItemSelection const&)),
-			this, SLOT(filterSelectionChanged(QItemSelection const&))
-		);
 	}
 
 	updateSortOptions();
@@ -478,46 +476,9 @@ MainWindow::showNewOpenProjectPanel()
 	layout->setRowStretch(0, 1);
 	layout->setRowStretch(2, 1);
 	setImageWidget(outer_widget.release(), TRANSFER_OWNERSHIP);
-	
-	filterList->setBatchProcessingPossible(false);
-}
 
-void
-MainWindow::createBatchProcessingWidget()
-{
-	using namespace boost::lambda;
-
-	m_ptrBatchProcessingWidget.reset(new QWidget);
-	QGridLayout* layout = new QGridLayout(m_ptrBatchProcessingWidget.get());
-	m_ptrBatchProcessingWidget->setLayout(layout);
-
-	SkinnedButton* stop_btn = new SkinnedButton(
-		":/icons/stop-big.png",
-		":/icons/stop-big-hovered.png",
-		":/icons/stop-big-pressed.png",
-		m_ptrBatchProcessingWidget.get()
-	);
-	stop_btn->setStatusTip(tr("Stop batch processing"));
-	
-	class LowerPanel : public QWidget
-	{
-	public:
-		LowerPanel(QWidget* parent = 0) : QWidget(parent) { ui.setupUi(this); }
-
-		Ui::BatchProcessingLowerPanel ui;
-	};
-	LowerPanel* lower_panel = new LowerPanel(m_ptrBatchProcessingWidget.get());
-	m_checkBeepWhenFinished = bind(&QCheckBox::isChecked, lower_panel->ui.beepWhenFinished);
-
-	int row = 0; // Row 0 is reserved.
-	layout->addWidget(stop_btn, ++row, 1, Qt::AlignCenter);
-	layout->addWidget(lower_panel, ++row, 0, 1, 3, Qt::AlignHCenter|Qt::AlignTop);
-	layout->setColumnStretch(0, 1);
-	layout->setColumnStretch(2, 1);
-	layout->setRowStretch(0, 1);
-	layout->setRowStretch(row, 1);
-	
-	connect(stop_btn, SIGNAL(clicked()), SLOT(stopBatchProcessing()));
+	pipelineStrip->setBatchProcessingPossible(false);
+	batchProcessAllButton->setEnabled(false);
 }
 
 void
@@ -530,8 +491,8 @@ MainWindow::setupThumbView()
 	}
 	int const delta_x = thumbView->size().width() - inner_width;
 	thumbView->setMinimumWidth((int)ceil(m_maxLogicalThumbSize.width() + delta_x));
-	
-	thumbView->setBackgroundBrush(palette().color(QPalette::Window));
+
+	thumbView->setBackgroundBrush(QColor(0xF5, 0xF5, 0xF6));
 	m_ptrThumbSequence->attachView(thumbView);
 }
 
@@ -1098,53 +1059,47 @@ MainWindow::thumbViewScrolled()
 }
 
 void
-MainWindow::filterSelectionChanged(QItemSelection const& selected)
+MainWindow::pipelineStageSelected(int index)
 {
 	if (m_ignoreSelectionChanges) {
 		return;
 	}
-	
-	if (selected.empty()) {
-		return;
-	}
-	
+	applyFilterSelection(index);
+}
+
+void
+MainWindow::applyFilterSelection(int index)
+{
 	m_ptrInteractiveQueue->cancelAndClear();
 	if (m_ptrBatchQueue.get()) {
-		// Should not happen, but just in case.
 		m_ptrBatchQueue->cancelAndClear();
 	}
-	
+
 	bool const was_below_fix_orientation = isBelowFixOrientation(m_curFilter);
 	bool const was_below_select_content = isBelowSelectContent(m_curFilter);
-	m_curFilter = selected.front().top();
+	m_curFilter = index;
 	bool const now_below_fix_orientation = isBelowFixOrientation(m_curFilter);
 	bool const now_below_select_content = isBelowSelectContent(m_curFilter);
-	
+
 	m_ptrStages->filterAt(m_curFilter)->selected();
-	
+
 	updateSortOptions();
 
-	// Propagate context boxes down the stage list, if necessary.
 	if (!was_below_select_content && now_below_select_content) {
-		// IMPORTANT: this needs to go before resetting thumbnails,
-		// because it may affect them.
 		if (m_ptrContentBoxPropagator.get()) {
 			m_ptrContentBoxPropagator->propagate(*m_ptrPages);
-		} // Otherwise probably no project is loaded.
+		}
 	}
 
-	// Propagate page orientations (that might have changed) to the "Split Pages" stage.
 	if (!was_below_fix_orientation && now_below_fix_orientation) {
-		// IMPORTANT: this needs to go before resetting thumbnails,
-		// because it may affect them.
 		if (m_ptrPageOrientationPropagator.get()) {
 			m_ptrPageOrientationPropagator->propagate(*m_ptrPages);
-		} // Otherwise probably no project is loaded.
+		}
 	}
-	
-	focusButton->setChecked(true); // Should go before resetThumbSequence().
+
+	focusButton->setChecked(true);
 	resetThumbSequence(currentPageOrderProvider());
-	
+
 	updateMainArea();
 }
 
@@ -1199,8 +1154,10 @@ MainWindow::startBatchProcessing()
 	focusButton->setChecked(true);
 	
 	removeFilterOptionsWidget();
-	filterList->setBatchProcessingInProgress(true);
-	filterList->setEnabled(false);
+	pipelineStrip->setBatchProcessingInProgress(true);
+	batchProcessAllButton->setEnabled(false);
+	batchStopButton->setEnabled(true);
+	batchProgressLabel->setText(tr("Processing..."));
 
 	// Submit up to maxParallelTasks() to run in parallel
 	int const maxParallel = FilterTaskExecutor::maxParallelTasks();
@@ -1241,9 +1198,11 @@ MainWindow::stopBatchProcessing(MainAreaAction main_area)
 
 	m_ptrBatchQueue->cancelAndClear();
 	m_ptrBatchQueue.reset();
-	
-	filterList->setBatchProcessingInProgress(false);
-	filterList->setEnabled(true);
+
+	pipelineStrip->setBatchProcessingInProgress(false);
+	batchProcessAllButton->setEnabled(true);
+	batchStopButton->setEnabled(false);
+	batchProgressLabel->setText(QString::fromUtf8("—"));
 
 	switch (main_area) {
 		case UPDATE_MAIN_AREA:
@@ -1276,10 +1235,9 @@ MainWindow::filterResult(BackgroundTaskPtr const& task, FilterResultPtr const& r
 				// Error from one of the previous filters.
 				int const idx = m_ptrStages->findFilter(result->filter());
 				assert(idx >= 0);
-				m_curFilter = idx;
-				
 				ScopedIncDec<int> selection_guard(m_ignoreSelectionChanges);
-				filterList->selectRow(idx);
+				pipelineStrip->setSelectedStage(idx);
+				applyFilterSelection(idx);
 			}
 		}
 
@@ -1726,20 +1684,26 @@ void
 MainWindow::updateMainArea()
 {
 	if (m_ptrPages->numImages() == 0) {
-		filterList->setBatchProcessingPossible(false);
+		pipelineStrip->setBatchProcessingPossible(false);
+		batchProcessAllButton->setEnabled(false);
 		showNewOpenProjectPanel();
 	} else if (isBatchProcessingInProgress()) {
-		filterList->setBatchProcessingPossible(false);
-		setImageWidget(m_ptrBatchProcessingWidget.get(), KEEP_OWNERSHIP);
+		pipelineStrip->setBatchProcessingPossible(false);
+		batchProcessAllButton->setEnabled(false);
+		batchStopButton->setEnabled(true);
+		batchProgressLabel->setText(tr("Processing..."));
+		setImageWidget(m_ptrProcessingIndicationWidget.get(), KEEP_OWNERSHIP);
 	} else {
 		PageInfo const page(m_ptrThumbSequence->selectionLeader());
 		if (page.isNull()) {
-			filterList->setBatchProcessingPossible(false);
+			pipelineStrip->setBatchProcessingPossible(false);
+			batchProcessAllButton->setEnabled(false);
 			removeImageWidget();
 			removeFilterOptionsWidget();
 		} else {
 			// Note that loadPageInteractive may reset it to false.
-			filterList->setBatchProcessingPossible(true);
+			pipelineStrip->setBatchProcessingPossible(true);
+			batchProcessAllButton->setEnabled(true);
 			loadPageInteractive(page);
 		}
 	}
@@ -1761,8 +1725,9 @@ MainWindow::loadPageInteractive(PageInfo const& page)
 	m_ptrInteractiveQueue->cancelAndClear();
 	
 	if (isOutputFilter() && !checkReadyForOutput(&page.id())) {
-		filterList->setBatchProcessingPossible(false);
-		
+		pipelineStrip->setBatchProcessingPossible(false);
+		batchProcessAllButton->setEnabled(false);
+
 		// Switch to the first page - the user will need
 		// to process all pages in batch mode.
 		m_ptrThumbSequence->setSelection(m_ptrThumbSequence->firstPage().id());

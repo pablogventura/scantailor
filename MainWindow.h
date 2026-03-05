@@ -123,7 +123,7 @@ private slots:
 	
 	void thumbViewScrolled();
 
-	void filterSelectionChanged(QItemSelection const& selected);
+	void pipelineStageSelected(int index);
 
 	void pageOrderingChanged(int idx);
 	
@@ -237,6 +237,8 @@ private:
 	PageView getCurrentView() const;
 	
 	void updateMainArea();
+
+	void applyFilterSelection(int index);
 	
 	bool checkReadyForOutput(PageId const* ignore = 0) const;
 	

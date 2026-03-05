@@ -447,6 +447,7 @@ SET(
 	ImageViewBase.cpp ImageViewBase.h
 	BasicImageView.cpp BasicImageView.h
 	StageListView.cpp StageListView.h
+	PipelineStripWidget.cpp PipelineStripWidget.h
 	DebugImageView.cpp DebugImageView.h
 	TabbedDebugImages.cpp TabbedDebugImages.h
 	ThumbnailLoadResult.h
