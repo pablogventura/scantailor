@@ -34,7 +34,8 @@
 #include <QMessageBox>
 #include <QDebug>
 #ifndef Q_MOC_RUN
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
+using namespace boost::placeholders;
 #include <boost/ref.hpp>
 #endif
 #include <vector>

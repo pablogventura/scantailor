@@ -63,7 +63,8 @@
 #include "imageproc/InfluenceMap.h"
 #include "config.h"
 #ifndef Q_MOC_RUN
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
+using namespace boost::placeholders;
 #include <boost/shared_ptr.hpp>
 #endif
 #include <QImage>

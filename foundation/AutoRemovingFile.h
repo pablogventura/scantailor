@@ -24,7 +24,7 @@
 /**
  * \brief Provides auto_ptr semantics for files.
  *
- * Just like std::auto_ptr deleting its object when it goes out of scope,
+ * Just like std::unique_ptr deleting its object when it goes out of scope,
  * this class deletes a file.  auto_ptr's copying semantics is also preserved.
  */
 class AutoRemovingFile

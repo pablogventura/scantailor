@@ -44,7 +44,8 @@
 #include <QDebug>
 #ifndef Q_MOC_RUN
 #include <boost/array.hpp>
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
+using namespace boost::placeholders;
 #endif
 #include <vector>
 #include <stdexcept>

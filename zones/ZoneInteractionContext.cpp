@@ -22,7 +22,8 @@
 #include "ZoneVertexDragInteraction.h"
 #include "ZoneContextMenuInteraction.h"
 #ifndef Q_MOC_RUN
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
+using namespace boost::placeholders;
 #endif
 
 ZoneInteractionContext::ZoneInteractionContext(

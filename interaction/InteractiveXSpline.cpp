@@ -24,7 +24,8 @@
 #include <QMouseEvent>
 #include <Qt>
 #ifndef Q_MOC_RUN
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
+using namespace boost::placeholders;
 #endif
 
 struct InteractiveXSpline::NoOp
