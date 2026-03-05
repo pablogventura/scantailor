@@ -1,0 +1,7 @@
+scantailor (0.9.12.1-1) unstable; urgency=medium
+
+  * Qt5 migration, C++14, output formats (PNG/JPEG), HiDPI, modern deps.
+  * Replaced std::auto_ptr with std::unique_ptr; updated Boost usage.
+  * Debian packaging: build with CMake and debhelper.
+
+ -- Scan Tailor Project <https://github.com/Scantailor/scantailor>  Thu, 05 Mar 2025 12:00:00 +0000

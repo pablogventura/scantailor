@@ -1,0 +1,46 @@
+Source: scantailor
+Section: graphics
+Priority: optional
+Maintainer: Scan Tailor Project <https://github.com/Scantailor/scantailor>
+Build-Depends:
+ cmake (>= 3.16),
+ debhelper-compat (= 13),
+ qtbase5-dev (>= 5.15),
+ qttools5-dev,
+ libboost-test-dev (>= 1.65),
+ libjpeg-dev,
+ zlib1g-dev,
+ libpng-dev,
+ libtiff-dev,
+ libxrender-dev,
+ pkg-config,
+ gettext,
+Standards-Version: 4.6.2
+Homepage: https://github.com/Scantailor/scantailor
+Vcs-Browser: https://github.com/Scantailor/scantailor
+Vcs-Git: https://github.com/Scantailor/scantailor.git
+Rules-Requires-Root: no
+
+Package: scantailor
+Architecture: any
+Depends:
+ libqt5widgets5 (>= 5.15),
+ libqt5xml5 (>= 5.15),
+ libqt5core5a (>= 5.15),
+ libqt5network5 (>= 5.15),
+ libjpeg62-turbo | libjpeg8,
+ zlib1g,
+ libpng16-16t64 | libpng16-16,
+ libtiff6,
+ libxrender1,
+ ${misc:Depends},
+ ${shlibs:Depends},
+Recommends: libgl1
+Description: Interactive post-processing tool for scanned pages
+ Scan Tailor is an interactive post-processing tool for scanned pages.
+ It performs operations such as page splitting, deskewing, adding/removing
+ borders, and selecting content. It supports batch processing and can
+ output to TIFF, PNG or JPEG.
+ .
+ This package provides both the graphical application (scantailor) and
+ the command-line batch tool (scantailor-cli).

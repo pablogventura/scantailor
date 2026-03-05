@@ -685,6 +685,32 @@ SET(
 	"/doxygen/"
 	"${CMAKE_BINARY_DIR}"
 )
+
+# Debian/Ubuntu .deb packaging (Linux only)
+IF(UNIX AND NOT APPLE)
+	SET(CPACK_GENERATOR "DEB" CACHE STRING "CPack generators: DEB for .deb")
+	SET(CPACK_CMAKE_GENERATOR "${CMAKE_GENERATOR}")
+	SET(CPACK_PACKAGING_INSTALL_PREFIX "/usr")
+	SET(CPACK_PACKAGE_NAME "scantailor")
+	SET(CPACK_PACKAGE_VERSION "${VERSION}")
+	SET(CPACK_PACKAGE_FILE_NAME "scantailor_${VERSION}_${CMAKE_SYSTEM_PROCESSOR}")
+	SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Interactive post-processing tool for scanned pages")
+	SET(CPACK_PACKAGE_DESCRIPTION "Scan Tailor is an interactive post-processing tool for scanned pages. It performs operations such as page splitting, deskewing, adding/removing borders, and selecting content. It supports batch processing and can output to TIFF, PNG or JPEG.")
+	SET(CPACK_PACKAGE_VENDOR "Scan Tailor Project")
+	IF(EXISTS "${CMAKE_SOURCE_DIR}/README.md")
+	SET(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README.md")
+ENDIF()
+	SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/resources/icons/COPYING")
+	# Debian-specific
+	SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "Scan Tailor Project <https://github.com/scantailor/scantailor>")
+	SET(CPACK_DEBIAN_PACKAGE_SECTION "graphics")
+	SET(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+	SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt5widgets5 (>= 5.15), libqt5xml5 (>= 5.15), libqt5core5a (>= 5.15), libqt5network5 (>= 5.15), libjpeg62-turbo | libjpeg8, zlib1g, libpng16-16t64 | libpng16-16, libtiff6, libxrender1")
+	SET(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/Scantailor/scantailor")
+	# Recommends for optional features (e.g. OpenGL)
+	SET(CPACK_DEBIAN_PACKAGE_RECOMMENDS "libgl1")
+ENDIF(UNIX AND NOT APPLE)
+
 INCLUDE(CPack)
 
 IF(WIN32)

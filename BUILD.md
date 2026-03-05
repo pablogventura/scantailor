@@ -51,3 +51,47 @@ cd build && ctest --output-on-failure
 ## Output formats
 
 The application supports output in **TIFF** (default), **PNG**, and **JPEG**. Use the "Output Format" option in the Output stage or the CLI flag `--output-format=tiff|png|jpeg`. Assembling pages into a single PDF is typically done with external tools (e.g. img2pdf, ImageMagick) after exporting images from Scan Tailor.
+
+## Building a .deb package (Debian/Ubuntu)
+
+You can generate a `.deb` in two ways.
+
+### Option 1: CPack (quick)
+
+From an existing build:
+
+```bash
+cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
+cmake --build .
+cpack -G DEB
+```
+
+The `.deb` will appear in `build/` (e.g. `scantailor_0.9.12_x86_64.deb`). Install with:
+
+```bash
+sudo dpkg -i scantailor_*.deb
+sudo apt-get install -f   # install dependencies if needed
+```
+
+### Option 2: Debian packaging (dpkg-buildpackage)
+
+For a package that follows Debian policy and is suitable for distribution or PPAs:
+
+```bash
+# Install build dependencies
+sudo apt-get install devscripts build-essential
+sudo apt-get build-dep .   # from the source tree, if apt has a previous version
+# Or install manually: cmake qtbase5-dev qttools5-dev libboost-test-dev \
+#   libjpeg-dev zlib1g-dev libpng-dev libtiff-dev libxrender-dev
+
+dpkg-buildpackage -us -uc -b
+```
+
+The `.deb` is created in the parent directory. To build without signing (for local use):
+
+```bash
+dpkg-buildpackage -b -uc -us
+```
+
+Install the generated `../scantailor_*.deb` with `dpkg -i` as above.
