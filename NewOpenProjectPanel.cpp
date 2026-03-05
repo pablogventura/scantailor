@@ -54,6 +54,9 @@ NewOpenProjectPanel::NewOpenProjectPanel(QWidget* parent)
 	openProjectLabel->setText(
 		Utils::richTextForLink(openProjectLabel->text())
 	);
+	newProjectFromPdfLabel->setText(
+		Utils::richTextForLink(newProjectFromPdfLabel->text())
+	);
 	
 	RecentProjects rp;
 	rp.read();
@@ -80,6 +83,10 @@ NewOpenProjectPanel::NewOpenProjectPanel(QWidget* parent)
 	connect(
 		openProjectLabel, SIGNAL(linkActivated(QString const&)),
 		this, SIGNAL(openProject())
+	);
+	connect(
+		newProjectFromPdfLabel, SIGNAL(linkActivated(QString const&)),
+		this, SIGNAL(newProjectFromPdf())
 	);
 }
 

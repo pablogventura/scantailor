@@ -527,6 +527,7 @@ SET(
 	LoadFilesStatusDialog.cpp LoadFilesStatusDialog.h
 	ProjectCreationContext.cpp ProjectCreationContext.h
 	ProjectOpeningContext.cpp ProjectOpeningContext.h
+	PdfToImages.cpp PdfToImages.h
 	OutOfMemoryDialog.cpp OutOfMemoryDialog.h
 	ThumbnailSequence.cpp ThumbnailSequence.h
 	ProjectFilesDialog.cpp ProjectFilesDialog.h

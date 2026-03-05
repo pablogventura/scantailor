@@ -285,6 +285,14 @@ ProjectFilesDialog::inProjectFiles() const
 	return files;
 }
 
+void
+ProjectFilesDialog::setInitialDirectories(QString const& inputDir, QString const& outputDir)
+{
+	m_autoOutDir = false;
+	setOutputDir(outputDir);
+	setInputDir(inputDir, true);
+}
+
 bool
 ProjectFilesDialog::isRtlLayout() const
 {

@@ -34,6 +34,8 @@ signals:
 	
 	void openProject();
 	
+	void newProjectFromPdf();
+	
 	void openRecentProject(QString const& project_file);
 protected:
 	virtual void paintEvent(QPaintEvent* event);

@@ -36,6 +36,15 @@ ProjectCreationContext::ProjectCreationContext(QWidget* parent)
 	showProjectFilesDialog();
 }
 
+ProjectCreationContext::ProjectCreationContext(QWidget* parent, QString const& initialInputDir, QString const& initialOutputDir)
+:	m_initialInputDir(initialInputDir),
+	m_initialOutputDir(initialOutputDir),
+	m_layoutDirection(Qt::LeftToRight),
+	m_pParent(parent)
+{
+	showProjectFilesDialog();
+}
+
 ProjectCreationContext::~ProjectCreationContext()
 {
 	// Deleting a null pointer is OK.
@@ -106,6 +115,11 @@ ProjectCreationContext::showProjectFilesDialog()
 	m_ptrProjectFilesDialog->setAttribute(Qt::WA_QuitOnClose, false);
 	if (m_pParent) {
 		m_ptrProjectFilesDialog->setWindowModality(Qt::WindowModal);
+	}
+	if (!m_initialInputDir.isEmpty() && !m_initialOutputDir.isEmpty()) {
+		m_ptrProjectFilesDialog->setInitialDirectories(m_initialInputDir, m_initialOutputDir);
+		m_initialInputDir.clear();
+		m_initialOutputDir.clear();
 	}
 	connect(
 		m_ptrProjectFilesDialog, SIGNAL(accepted()),

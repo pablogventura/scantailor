@@ -38,6 +38,9 @@ class ProjectCreationContext : public QObject
 public:
 	ProjectCreationContext(QWidget* parent);
 	
+	/** Create context with pre-filled dirs (e.g. after extracting PDF to images). */
+	ProjectCreationContext(QWidget* parent, QString const& initialInputDir, QString const& initialOutputDir);
+	
 	virtual ~ProjectCreationContext();
 	
 	std::vector<ImageFileInfo> const& files() const { return m_files; }
@@ -45,6 +48,7 @@ public:
 	QString const& outDir() const { return m_outDir; }
 	
 	Qt::LayoutDirection layoutDirection() const { return m_layoutDirection; }
+	
 signals:
 	void done(ProjectCreationContext* context);
 private slots:
@@ -63,6 +67,8 @@ private:
 	QPointer<ProjectFilesDialog> m_ptrProjectFilesDialog;
 	QPointer<FixDpiDialog> m_ptrFixDpiDialog;
 	QString m_outDir;
+	QString m_initialInputDir;
+	QString m_initialOutputDir;
 	std::vector<ImageFileInfo> m_files;
 	Qt::LayoutDirection m_layoutDirection;
 	QWidget* m_pParent;

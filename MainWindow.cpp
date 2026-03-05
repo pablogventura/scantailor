@@ -50,6 +50,7 @@
 #include "PageOrientationPropagator.h"
 #include "ProjectCreationContext.h"
 #include "ProjectOpeningContext.h"
+#include "PdfToImages.h"
 #include "SkinnedButton.h"
 #include "SystemLoadWidget.h"
 #include "ProcessingIndicationWidget.h"
@@ -458,6 +459,11 @@ MainWindow::showNewOpenProjectPanel()
 	connect(
 		nop, SIGNAL(openProject()),
 		this, SLOT(openProject()),
+		Qt::QueuedConnection
+	);
+	connect(
+		nop, SIGNAL(newProjectFromPdf()),
+		this, SLOT(newProjectFromPdf()),
 		Qt::QueuedConnection
 	);
 	connect(
@@ -1405,6 +1411,72 @@ MainWindow::newProject()
 	
 	// It will delete itself when it's done.
 	ProjectCreationContext* context = new ProjectCreationContext(this);
+	connect(
+		context, SIGNAL(done(ProjectCreationContext*)),
+		this, SLOT(newProjectCreated(ProjectCreationContext*))
+	);
+}
+
+void
+MainWindow::newProjectFromPdf()
+{
+	if (!closeProjectInteractive()) {
+		return;
+	}
+	if (!PdfToImages::isAvailable()) {
+		QMessageBox::warning(
+			this, tr("New project from PDF"),
+			tr("pdftoppm was not found. Install poppler-utils to create projects from PDF.\n"
+			   "Example: sudo apt install poppler-utils")
+		);
+		return;
+	}
+	QSettings settings;
+	QString const last_dir(settings.value("project/lastDir").toString());
+	QString const pdf_path(
+		QFileDialog::getOpenFileName(
+			this, tr("Select PDF file"), last_dir,
+			tr("PDF files") + QString::fromLatin1(" (*.pdf)")
+		)
+	);
+	if (pdf_path.isEmpty()) {
+		return;
+	}
+	QDir const pdf_dir(QFileInfo(pdf_path).absolutePath());
+	QString const suggested_project_dir(pdf_dir.absoluteFilePath(
+		QFileInfo(pdf_path).completeBaseName() + QString::fromLatin1("_scantailor")
+	));
+	QString const project_dir(
+		QFileDialog::getExistingDirectory(
+			this, tr("Select project directory (will create 'pages' and 'output' subdirs)"),
+			suggested_project_dir.isEmpty() ? pdf_dir.absolutePath() : suggested_project_dir,
+			QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
+		)
+	);
+	if (project_dir.isEmpty()) {
+		return;
+	}
+	QDir const proj_dir(project_dir);
+	QString const pages_dir(proj_dir.absoluteFilePath(QString::fromLatin1("pages")));
+	QString const output_dir(proj_dir.absoluteFilePath(QString::fromLatin1("output")));
+	if (!proj_dir.mkpath(QString::fromLatin1("pages"))) {
+		QMessageBox::warning(
+			this, tr("Error"),
+			tr("Could not create directory: %1").arg(pages_dir)
+		);
+		return;
+	}
+	if (!proj_dir.mkpath(QString::fromLatin1("output"))) {
+		QMessageBox::warning(
+			this, tr("Error"),
+			tr("Could not create directory: %1").arg(output_dir)
+		);
+		return;
+	}
+	if (!PdfToImages::convert(pdf_path, pages_dir, this)) {
+		return;
+	}
+	ProjectCreationContext* context = new ProjectCreationContext(this, pages_dir, output_dir);
 	connect(
 		context, SIGNAL(done(ProjectCreationContext*)),
 		this, SLOT(newProjectCreated(ProjectCreationContext*))

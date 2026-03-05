@@ -41,6 +41,9 @@ public:
 	
 	std::vector<ImageFileInfo> inProjectFiles() const;
 	
+	/** Pre-fill input and output directories (e.g. after extracting PDF to images). */
+	void setInitialDirectories(QString const& inputDir, QString const& outputDir);
+	
 	bool isRtlLayout() const;
 	
 	bool isDpiFixingForced() const;

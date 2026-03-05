@@ -35,12 +35,13 @@ Depends:
  libxrender1,
  ${misc:Depends},
  ${shlibs:Depends},
-Recommends: libgl1
+Recommends: libgl1, poppler-utils
 Description: Interactive post-processing tool for scanned pages
  Scan Tailor is an interactive post-processing tool for scanned pages.
  It performs operations such as page splitting, deskewing, adding/removing
  borders, and selecting content. It supports batch processing and can
- output to TIFF, PNG or JPEG.
+ output to TIFF, PNG or JPEG. You can also start a new project from a PDF
+ file (requires poppler-utils); pages are extracted as 300 DPI PNG images.
  .
  This package provides both the graphical application (scantailor) and
  the command-line batch tool (scantailor-cli).

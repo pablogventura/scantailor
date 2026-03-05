@@ -161,6 +161,8 @@ private slots:
 	
 	void openProject();
 	
+	void newProjectFromPdf();
+	
 	void projectOpened(ProjectOpeningContext* context);
 	
 	void closeProject();
