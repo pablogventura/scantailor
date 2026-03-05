@@ -17,7 +17,6 @@
 */
 
 #include "MainWindow.h"
-#include "MainWindow.h.moc"
 #include "NewOpenProjectPanel.h"
 #include "RecentProjects.h"
 #include "WorkerThread.h"
@@ -81,6 +80,8 @@
 #include "filters/page_layout/Task.h"
 #include "filters/page_layout/CacheDrivenTask.h"
 #include "filters/output/Filter.h"
+#include "filters/output/Params.h"
+#include "filters/output/Settings.h"
 #include "filters/output/Task.h"
 #include "filters/output/CacheDrivenTask.h"
 #include "LoadFileTask.h"

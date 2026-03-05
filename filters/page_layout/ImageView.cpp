@@ -17,7 +17,6 @@
 */
 
 #include "ImageView.h"
-#include "ImageView.h.moc"
 #include "OptionsWidget.h"
 #include "Margins.h"
 #include "Settings.h"
@@ -27,6 +26,7 @@
 #include "imageproc/PolygonUtils.h"
 #include <QPointF>
 #include <QLineF>
+#include <QPainterPath>
 #include <QPolygonF>
 #include <QRect>
 #include <QSize>

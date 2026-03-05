@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "SplitModeDialog.h.moc"
+#include "SplitModeDialog.h"
 #include "PageSelectionAccessor.h"
 #include <QPixmap>
 #include <QButtonGroup>

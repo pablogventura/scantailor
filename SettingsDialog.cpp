@@ -17,7 +17,6 @@
 */
 
 #include "SettingsDialog.h"
-#include "SettingsDialog.h.moc"
 #include "OpenGLSupport.h"
 #include "config.h"
 #include <QSettings>

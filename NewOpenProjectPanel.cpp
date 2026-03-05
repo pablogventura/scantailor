@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "NewOpenProjectPanel.h.moc"
+#include "NewOpenProjectPanel.h"
 #include "RecentProjects.h"
 #include "Utils.h"
 #ifndef Q_MOC_RUN

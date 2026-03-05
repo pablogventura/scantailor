@@ -22,7 +22,6 @@
 #include <QFile>
 #include <QDir>
 #include <Qt>
-#include <QTextDocument> // Qt::escape() is actually declare there.
 
 #ifdef Q_WS_WIN
 #include <windows.h>
@@ -57,7 +56,7 @@ Utils::richTextForLink(
 		"</head><body><p style=\"margin-top:0px; margin-bottom:0px;"
 		"margin-left:0px; margin-right:0px; -qt-block-indent:0;"
 		"text-indent:0px;\"><a href=\"%1\">%2</a></p></body></html>"
-	).arg(Qt::escape(target), Qt::escape(label));
+	).arg(target.toHtmlEscaped(), label.toHtmlEscaped());
 }
 
 void

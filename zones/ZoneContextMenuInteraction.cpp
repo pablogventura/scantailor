@@ -17,7 +17,6 @@
 */
 
 #include "ZoneContextMenuInteraction.h"
-#include "ZoneContextMenuInteraction.h.moc"
 #include "ZoneInteractionContext.h"
 #include "ImageViewBase.h"
 #include "EditableZoneSet.h"
@@ -28,6 +27,7 @@
 #include <QPixmap>
 #include <QIcon>
 #include <QPainter>
+#include <QPainterPath>
 #include <QTransform>
 #include <QSignalMapper>
 #include <QCursor>

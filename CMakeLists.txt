@@ -14,7 +14,7 @@ SET(
 	"${CMAKE_SOURCE_DIR}/cmake/default_cxxflags.cmake"
 )
 
-PROJECT("Scan Tailor" LANGUAGES CXX)
+PROJECT("Scan Tailor" LANGUAGES C CXX)
 
 # C++14 required for range-for and modern C++.
 SET(CMAKE_CXX_STANDARD 14)
@@ -108,8 +108,16 @@ ENDIF()
 # Qt5 (minimum 5.15 for broad compatibility)
 SET(CMAKE_AUTOMOC ON)
 SET(CMAKE_AUTORCC ON)
+# Required when using Qt built with -reduce-relocations (e.g. Debian/Ubuntu)
+SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
 FIND_PACKAGE(Qt5 5.15 REQUIRED COMPONENTS Widgets Xml Network)
 SET(QT_QMAKE_EXECUTABLE "${Qt5_QMAKE_EXECUTABLE}")
+# So that static libs (math, foundation, dewarping, imageproc, etc.) see Qt headers
+INCLUDE_DIRECTORIES(SYSTEM
+  ${Qt5Core_INCLUDE_DIRS}
+  ${Qt5Gui_INCLUDE_DIRS}
+  ${Qt5Widgets_INCLUDE_DIRS}
+  ${Qt5Xml_INCLUDE_DIRS})
 FIND_PACKAGE(Qt5 5.15 COMPONENTS LinguistTools QUIET)
 IF(Qt5_LUPDATE_EXECUTABLE)
 	SET(QT_LUPDATE_EXECUTABLE "${Qt5_LUPDATE_EXECUTABLE}")
