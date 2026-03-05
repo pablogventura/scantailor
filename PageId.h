@@ -20,6 +20,8 @@
 #define PAGEID_H_
 
 #include "ImageId.h"
+#include <cstddef>
+#include <functional>
 
 class QString;
 
@@ -65,5 +67,14 @@ private:
 bool operator==(PageId const& lhs, PageId const& rhs);
 bool operator!=(PageId const& lhs, PageId const& rhs);
 bool operator<(PageId const& lhs, PageId const& rhs);
+
+namespace std {
+template<>
+struct hash<PageId> {
+	size_t operator()(PageId const& p) const noexcept {
+		return std::hash<ImageId>()(p.imageId()) ^ (size_t(p.subPage()) << 1);
+	}
+};
+}
 
 #endif

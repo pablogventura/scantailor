@@ -53,5 +53,7 @@
     <file>icons/left_page_plus_offcut.png</file>
     <file>icons/right_page_plus_offcut.png</file>
     <file>GPLv3.html</file>
+    <file>stylesheets/light_scheme/stylesheet.qss</file>
+    <file>stylesheets/dark_scheme/stylesheet.qss</file>
   </qresource>
 </RCC>

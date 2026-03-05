@@ -31,6 +31,7 @@ public:
 	virtual ~SettingsDialog();
 private slots:
 	void commitChanges();
+	void blackOnWhiteDetectionToggled(bool checked);
 private:
 	Ui::SettingsDialog ui;
 };

@@ -25,6 +25,9 @@
 #include "IntrusivePtr.h"
 #include "FilterResult.h"
 #include "SafeDeletingQObjectPtr.h"
+#include "PageOrderOption.h"
+#include <QCoreApplication>
+#include <vector>
 
 class PageId;
 class QString;
@@ -47,6 +50,7 @@ class Settings;
 class Filter : public AbstractFilter
 {
 	DECLARE_NON_COPYABLE(Filter)
+	Q_DECLARE_TR_FUNCTIONS(deskew::Filter)
 public:
 	Filter(PageSelectionAccessor const& page_selection_accessor);
 	
@@ -74,6 +78,10 @@ public:
 	IntrusivePtr<CacheDrivenTask> createCacheDrivenTask(
 		IntrusivePtr<select_content::CacheDrivenTask> const& next_task);
 	
+	virtual int selectedPageOrder() const;
+	virtual void selectPageOrder(int option);
+	virtual std::vector<PageOrderOption> pageOrderOptions() const;
+	
 	OptionsWidget* optionsWidget() { return m_ptrOptionsWidget.get(); }
 	Settings* getSettings() { return m_ptrSettings.get(); };
 private:
@@ -83,6 +91,8 @@ private:
 	
 	IntrusivePtr<Settings> m_ptrSettings;
 	SafeDeletingQObjectPtr<OptionsWidget> m_ptrOptionsWidget;
+	std::vector<PageOrderOption> m_pageOrderOptions;
+	int m_selectedPageOrder;
 };
 
 } // namespace deskew

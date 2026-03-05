@@ -17,6 +17,7 @@
 */
 
 #include "Utils.h"
+#include "ApplicationSettings.h"
 #include <QString>
 #include <QByteArray>
 #include <QFile>
@@ -77,7 +78,7 @@ Utils::outputDirToThumbDir(QString const& output_dir)
 IntrusivePtr<ThumbnailPixmapCache>
 Utils::createThumbnailCache(QString const& output_dir)
 {
-	QSize const max_pixmap_size(200, 200);
+	QSize const max_pixmap_size = ApplicationSettings::getInstance().getThumbnailQuality();
 	QString const thumbs_cache_path(outputDirToThumbDir(output_dir));
 	
 	return IntrusivePtr<ThumbnailPixmapCache>(

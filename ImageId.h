@@ -20,6 +20,9 @@
 #define IMAGEID_H_
 
 #include <QString>
+#include <QHash>
+#include <cstddef>
+#include <functional>
 
 class QFileInfo;
 
@@ -58,6 +61,15 @@ private:
 
 bool operator==(ImageId const& lhs, ImageId const& rhs);
 bool operator!=(ImageId const& lhs, ImageId const& rhs);
+
+namespace std {
+template<>
+struct hash<ImageId> {
+	size_t operator()(ImageId const& id) const noexcept {
+		return size_t(qHash(id.filePath())) ^ (size_t(id.page()) << 1);
+	}
+};
+}
 bool operator<(ImageId const& lhs, ImageId const& rhs);
 
 #endif

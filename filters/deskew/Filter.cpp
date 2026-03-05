@@ -27,6 +27,7 @@
 #include "PageId.h"
 #include "RelinkablePath.h"
 #include "AbstractRelinker.h"
+#include "OrderByDeviationProvider.h"
 #ifndef Q_MOC_RUN
 #include <boost/lambda/lambda.hpp>
 #include <boost/lambda/bind.hpp>
@@ -42,11 +43,17 @@ namespace deskew
 {
 
 Filter::Filter(PageSelectionAccessor const& page_selection_accessor)
-:	m_ptrSettings(new Settings)
+:	m_ptrSettings(new Settings),
+	m_selectedPageOrder(0)
 {
 	if (CommandLine::get().isGui()) {
 		m_ptrOptionsWidget.reset(new OptionsWidget(m_ptrSettings, page_selection_accessor));
 	}
+	typedef PageOrderOption::ProviderPtr ProviderPtr;
+	ProviderPtr const default_order;
+	ProviderPtr const order_by_deviation(new OrderByDeviationProvider(m_ptrSettings->deviationProvider()));
+	m_pageOrderOptions.push_back(PageOrderOption(tr("Natural order"), default_order));
+	m_pageOrderOptions.push_back(PageOrderOption(tr("Order by decreasing deviation"), order_by_deviation));
 }
 
 Filter::~Filter()
@@ -63,6 +70,25 @@ PageView
 Filter::getView() const
 {
 	return PAGE_VIEW;
+}
+
+int
+Filter::selectedPageOrder() const
+{
+	return m_selectedPageOrder;
+}
+
+void
+Filter::selectPageOrder(int option)
+{
+	assert((unsigned)option < m_pageOrderOptions.size());
+	m_selectedPageOrder = option;
+}
+
+std::vector<PageOrderOption>
+Filter::pageOrderOptions() const
+{
+	return m_pageOrderOptions;
 }
 
 void

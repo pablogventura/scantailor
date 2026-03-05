@@ -53,6 +53,8 @@
 #include "PdfToImages.h"
 #include "SkinnedButton.h"
 #include "SystemLoadWidget.h"
+#include "StatusBarPanel.h"
+#include "ApplicationSettings.h"
 #include "ProcessingIndicationWidget.h"
 #include "ImageMetadataLoader.h"
 #include "SmartFilenameOrdering.h"
@@ -128,6 +130,10 @@
 #include <QFileSystemModel>
 #include <QFileInfo>
 #include <QResource>
+#include <QShortcut>
+#include <QInputDialog>
+#include <QThreadPool>
+#include <QThread>
 #include <Qt>
 #include <QDebug>
 #include <algorithm>
@@ -169,11 +175,14 @@ MainWindow::MainWindow()
 	m_debug(false),
 	m_closing(false)
 {
-	m_maxLogicalThumbSize = QSize(250, 160);
+	m_maxLogicalThumbSize = ApplicationSettings::getInstance().getMaxLogicalThumbnailSize();
 	m_ptrThumbSequence.reset(new ThumbnailSequence(m_maxLogicalThumbSize));
 	
 	setupUi(this);
 	sortOptions->setVisible(false);
+
+	m_statusBarPanel.reset(new StatusBarPanel);
+	QMainWindow::statusBar()->addPermanentWidget(m_statusBarPanel.get(), 1);
 
 #if !defined(ENABLE_OPENGL)
 	// Right now the only setting is 3D acceleration, so get rid of
@@ -201,6 +210,14 @@ MainWindow::MainWindow()
 	addAction(actionPrevPage);
 	addAction(actionPrevPageQ);
 	addAction(actionNextPageW);
+
+	// ScanTailor Advanced: Ctrl+G go to page, Ctrl+1..5 output tabs
+	QShortcut* goToPageShortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_G), this);
+	connect(goToPageShortcut, &QShortcut::activated, this, &MainWindow::goToPageByNumber);
+	for (int i = 0; i < 5; ++i) {
+		QShortcut* tabShortcut = new QShortcut(QKeySequence(Qt::CTRL | (Qt::Key_1 + i)), this);
+		connect(tabShortcut, &QShortcut::activated, this, [this, i]() { setOutputTab(i); });
+	}
 
 	// Should be enough to save a project.
 	OutOfMemoryHandler::instance().allocateEmergencyMemory(3*1024*1024);
@@ -431,6 +448,10 @@ MainWindow::switchToNewProject(
 	updateProjectActions();
 	updateWindowTitle();
 	updateMainArea();
+
+	if (m_statusBarPanel && pages->toPageSequence(IMAGE_VIEW).numPages() == 0) {
+		m_statusBarPanel->clear();
+	}
 
 	if (!QDir(out_dir).exists()) {
 		showRelinkingDialog();
@@ -939,11 +960,59 @@ MainWindow::goToPage(PageId const& page_id)
 }
 
 void
+MainWindow::goToPageByNumber()
+{
+	if (!isProjectLoaded() || !m_ptrStages) {
+		return;
+	}
+	PageSequence const seq(allPages());
+	int const total = (int)seq.numPages();
+	if (total == 0) {
+		return;
+	}
+	bool ok = false;
+	int pageNum = QInputDialog::getInt(
+		this, tr("Go to Page"), tr("Page number (1 - %1):").arg(total),
+		1, 1, total, 1, &ok
+	);
+	if (!ok) {
+		return;
+	}
+	PageId const pageId(seq.pageAt((size_t)(pageNum - 1)).id());
+	goToPage(pageId);
+}
+
+void
+MainWindow::setOutputTab(int index)
+{
+	if (!m_ptrStages || m_curFilter != m_ptrStages->outputFilterIdx()) {
+		return;
+	}
+	if (!m_ptrTabbedDebugImages || index < 0 || index >= m_ptrTabbedDebugImages->count()) {
+		return;
+	}
+	m_ptrTabbedDebugImages->setCurrentIndex(index);
+}
+
+void
 MainWindow::currentPageChanged(
 	PageInfo const& page_info, QRectF const& thumb_rect,
 	ThumbnailSequence::SelectionFlags const flags)
 {
 	m_selectedPage.set(page_info.id(), getCurrentView());
+
+	if (m_statusBarPanel) {
+		PageSequence const seq(allPages());
+		int const total = (int)seq.numPages();
+		int pageNumber = 1;
+		for (size_t i = 0; i < seq.numPages(); ++i) {
+			if (seq.pageAt(i).id() == page_info.id()) {
+				pageNumber = (int)i + 1;
+				break;
+			}
+		}
+		m_statusBarPanel->updatePage(pageNumber, total, page_info.id());
+	}
 
 	if ((flags & ThumbnailSequence::SELECTED_BY_USER) || focusButton->isChecked()) {
 		if (!(flags & ThumbnailSequence::AVOID_SCROLLING_TO)) {
@@ -1133,6 +1202,12 @@ MainWindow::startBatchProcessing()
 {
 	if (isBatchProcessingInProgress() || !isProjectLoaded()) {
 		return;
+	}
+
+	// ScanTailor Advanced: configurable batch thread count
+	{
+		int const threads = ApplicationSettings::getInstance().getBatchThreadCount();
+		QThreadPool::globalInstance()->setMaxThreadCount(threads > 0 ? threads : QThread::idealThreadCount());
 	}
 
 	m_ptrInteractiveQueue->cancelAndClear();

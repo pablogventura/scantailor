@@ -267,4 +267,28 @@ ScanTailor Advanced está bajo GPL-3.0. Cualquier código que se copie o adapte 
 
 ---
 
+---
+
+## 7. Estado de integración (implementado)
+
+**Fase 0 — Completada**
+- `ApplicationSettings` (singleton con QSettings): tema, unidades, auto-guardado, compresión TIFF, desviación, thumbnails, perfiles, hilos de batch, etc.
+- Sistema de **Unidades**: `Units`, `UnitsProvider`, `UnitsConverter`, `UnitsListener` (px, mm, cm, in).
+
+**Fase 1 — Completada**
+- **StatusBarPanel**: panel en la barra de estado con página actual (p. N / total) y nombre/tipo [L]/[R].
+- **Temas**: estilos mínimo claro/oscuro en `resources/stylesheets/`; carga en `main.cpp` según `ApplicationSettings::getColorScheme()`.
+- **Atajos**: Ctrl+G (ir a página por número), Ctrl+1..5 (cambiar pestaña de salida cuando el filtro activo es Output).
+- **Hilos de batch**: al iniciar procesamiento por lotes se usa `ApplicationSettings::getBatchThreadCount()` para configurar `QThreadPool::globalInstance()->setMaxThreadCount()` (0 = automático).
+- **SettingsDialog**: pestañas General, Thumbnails y Output/TIFF con: esquema de color, auto-guardado, unidades, hilos de batch, detección Black on white (y “aplicar en output”), calidad/tamaño de miniatura, columna única, resaltar desviación, pregunta al cancelar selección, compresión TIFF B&W y Color. Todo persistido en `ApplicationSettings`.
+
+**Fase 2 (parcial) — Completada**
+- **TiffWriter**: usa `ApplicationSettings::getTiffBwCompression()` y `getTiffColorCompression()` para imágenes bitonales/indexadas y RGB/ARGB.
+- **Thumbnails**: `Utils::createThumbnailCache()` usa `ApplicationSettings::getThumbnailQuality()`; `MainWindow` usa `getMaxLogicalThumbnailSize()` para la secuencia de miniaturas.
+- **DeviationProvider** (template) y **OrderByDeviationProvider**: añadidos en core. **Deskew**: `Settings` mantiene un `DeviationProvider<PageId>` actualizado con el ángulo de deskew por página; el **Filter** ofrece la opción “Order by decreasing deviation” en el orden de páginas. Especializaciones `std::hash<ImageId>` y `std::hash<PageId>` para uso en `DeviationProvider`. Pendiente: asteriscos rojos en thumbnails (requiere pasar flag “deviant” desde CacheDrivenTask a ThumbnailBase/Thumbnail/IncompleteThumbnail).
+
+**Fases 3–9**: pendientes; seguir el plan por fases y la referencia de archivos en `scantailor-advanced/`.
+
+---
+
 *Documento generado a partir de la comparación entre el proyecto en este repositorio y el clon de [4lex4/scantailor-advanced](https://github.com/4lex4/scantailor-advanced) en `scantailor-advanced/`.*

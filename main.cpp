@@ -18,6 +18,7 @@
 
 #include "config.h"
 #include "Application.h"
+#include "ApplicationSettings.h"
 #include "MainWindow.h"
 #include "PngMetadataLoader.h"
 #include "TiffMetadataLoader.h"
@@ -31,6 +32,7 @@
 #include <QStringList>
 #include <QTranslator>
 #include <QApplication>
+#include <QFile>
 #include <Qt>
 #include <string.h>
 
@@ -185,6 +187,21 @@ int main(int argc, char** argv)
 	app.setOrganizationName("Scan Tailor");
 	app.setOrganizationDomain("scantailor.sourceforge.net");
 	QSettings settings;
+
+	// Load color scheme from ApplicationSettings (ScanTailor Advanced integration)
+	{
+		QString scheme = ApplicationSettings::getInstance().getColorScheme();
+		QString qssPath = QStringLiteral(":/stylesheets/%1/stylesheet.qss");
+		if (scheme == QLatin1String("light")) {
+			qssPath = qssPath.arg(QStringLiteral("light_scheme"));
+		} else {
+			qssPath = qssPath.arg(QStringLiteral("dark_scheme"));
+		}
+		QFile qssFile(qssPath);
+		if (qssFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+			app.setStyleSheet(QString::fromUtf8(qssFile.readAll()));
+		}
+	}
 	
 	PngMetadataLoader::registerMyself();
 	TiffMetadataLoader::registerMyself();

@@ -70,6 +70,7 @@ class TabbedDebugImages;
 class ProcessingTaskQueue;
 class FixDpiDialog;
 class OutOfMemoryDialog;
+class StatusBarPanel;
 class QLineF;
 class QRectF;
 class QLayout;
@@ -109,6 +110,10 @@ private slots:
 	void goPrevPage();
 	
 	void goToPage(PageId const& page_id);
+
+	void goToPageByNumber();
+
+	void setOutputTab(int index);
 	
 	void currentPageChanged(
 		PageInfo const& page_info, QRectF const& thumb_rect,
@@ -302,6 +307,7 @@ private:
 	QObjectCleanupHandler m_optionsWidgetCleanup;
 	QObjectCleanupHandler m_imageWidgetCleanup;
 	std::unique_ptr<OutOfMemoryDialog> m_ptrOutOfMemoryDialog;
+	std::unique_ptr<StatusBarPanel> m_statusBarPanel;
 	int m_curFilter;
 	int m_ignoreSelectionChanges;
 	int m_ignorePageOrderingChanges;

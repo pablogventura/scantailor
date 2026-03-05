@@ -17,6 +17,7 @@
 */
 
 #include "TiffWriter.h"
+#include "ApplicationSettings.h"
 #include "Dpm.h"
 #include "imageproc/Constants.h"
 #include <QtGlobal>
@@ -253,8 +254,7 @@ TiffWriter::writeBitonalOrIndexed8Image(
 	TiffHandle const& tif, QImage const& image)
 {
 	TIFFSetField(tif.handle(), TIFFTAG_SAMPLESPERPIXEL, uint16(1));
-	
-	uint16 compression = COMPRESSION_LZW;
+	int compressionSetting;
 	uint16 bits_per_sample = 8;
 	uint16 photometric = PHOTOMETRIC_PALETTE;
 	if (image.isGrayscale()) {
@@ -264,9 +264,7 @@ TiffWriter::writeBitonalOrIndexed8Image(
 	switch (image.format()) {
 		case QImage::Format_Mono:
 		case QImage::Format_MonoLSB:
-			// Don't use CCITTFAX4 compression, as Photoshop
-			// has problems with it.
-			//compression = COMPRESSION_CCITTFAX4;
+			compressionSetting = ApplicationSettings::getInstance().getTiffBwCompression();
 			bits_per_sample = 1;
 			if (image.colorCount() < 2) {
 				photometric = PHOTOMETRIC_MINISWHITE;
@@ -283,9 +281,11 @@ TiffWriter::writeBitonalOrIndexed8Image(
 				}
 			}
 			break;
-		default:;
+		default:
+			compressionSetting = ApplicationSettings::getInstance().getTiffColorCompression();
+			break;
 	}
-	
+	uint16 const compression = static_cast<uint16_t>(compressionSetting);
 	TIFFSetField(tif.handle(), TIFFTAG_COMPRESSION, compression);
 	TIFFSetField(tif.handle(), TIFFTAG_BITSPERSAMPLE, bits_per_sample);
 	TIFFSetField(tif.handle(), TIFFTAG_PHOTOMETRIC, photometric);
@@ -324,9 +324,9 @@ TiffWriter::writeRGB32Image(
 	TiffHandle const& tif, QImage const& image)
 {
 	assert(image.format() == QImage::Format_RGB32);
-	
+	uint16 const colorCompression = static_cast<uint16_t>(ApplicationSettings::getInstance().getTiffColorCompression());
 	TIFFSetField(tif.handle(), TIFFTAG_SAMPLESPERPIXEL, uint16(3));
-	TIFFSetField(tif.handle(), TIFFTAG_COMPRESSION, COMPRESSION_LZW);
+	TIFFSetField(tif.handle(), TIFFTAG_COMPRESSION, colorCompression);
 	TIFFSetField(tif.handle(), TIFFTAG_BITSPERSAMPLE, uint16(8));
 	TIFFSetField(tif.handle(), TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
 	
@@ -361,9 +361,9 @@ TiffWriter::writeARGB32Image(
 	TiffHandle const& tif, QImage const& image)
 {
 	assert(image.format() == QImage::Format_ARGB32);
-	
+	uint16 const colorCompression = static_cast<uint16_t>(ApplicationSettings::getInstance().getTiffColorCompression());
 	TIFFSetField(tif.handle(), TIFFTAG_SAMPLESPERPIXEL, uint16(4));
-	TIFFSetField(tif.handle(), TIFFTAG_COMPRESSION, COMPRESSION_LZW);
+	TIFFSetField(tif.handle(), TIFFTAG_COMPRESSION, colorCompression);
 	TIFFSetField(tif.handle(), TIFFTAG_BITSPERSAMPLE, uint16(8));
 	TIFFSetField(tif.handle(), TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
 	

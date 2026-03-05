@@ -59,7 +59,7 @@ BinaryImage binarizeMokji(
  * Sauvola, J. and M. Pietikainen. 2000. "Adaptive document image binarization".
  * http://www.mediateam.oulu.fi/publications/pdf/24.pdf
  */
-BinaryImage binarizeSauvola(QImage const& src, QSize window_size);
+BinaryImage binarizeSauvola(QImage const& src, QSize window_size, double k = 0.34);
 
 /**
  * \brief Image binarization using Wolf's local thresholding method.
@@ -75,7 +75,7 @@ BinaryImage binarizeSauvola(QImage const& src, QSize window_size);
  */
 BinaryImage binarizeWolf(
 	QImage const& src, QSize window_size,
-	unsigned char lower_bound = 1, unsigned char upper_bound = 254);
+	unsigned char lower_bound = 1, unsigned char upper_bound = 254, double k = 0.3);
 
 } // namespace imageproc
 

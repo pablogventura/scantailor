@@ -437,6 +437,11 @@ SET(
 	ImageMetadata.cpp ImageMetadata.h
 	RecentProjects.cpp RecentProjects.h
 	OutOfMemoryHandler.cpp OutOfMemoryHandler.h
+	ApplicationSettings.cpp ApplicationSettings.h
+	Units.cpp Units.h
+	UnitsConverter.cpp UnitsConverter.h
+	UnitsListener.cpp UnitsListener.h
+	UnitsProvider.cpp UnitsProvider.h
 	CommandLine.cpp CommandLine.h
 	PageSelectionAccessor.cpp PageSelectionAccessor.h
 	PageSelectionProvider.h
@@ -504,6 +509,8 @@ SET(
 	ChangedStateItemDelegate.h
 	PageOrderProvider.h
 	PageOrderOption.h
+	DeviationProvider.h
+	OrderByDeviationProvider.cpp OrderByDeviationProvider.h
 	PayloadEvent.h
 	filter_dc/AbstractFilterDataCollector.h
 	filter_dc/ThumbnailCollector.h
@@ -534,6 +541,7 @@ SET(
 	ProjectFilesDialog.cpp ProjectFilesDialog.h
 	NewOpenProjectPanel.cpp NewOpenProjectPanel.h
 	SystemLoadWidget.cpp SystemLoadWidget.h
+	StatusBarPanel.cpp StatusBarPanel.h
 	MainWindow.cpp MainWindow.h
 	main.cpp
 )

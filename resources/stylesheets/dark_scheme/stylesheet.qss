@@ -1,0 +1,5 @@
+/* ScanTailor Advanced dark scheme - minimal integration */
+QMainWindow, #centralwidget { background-color: #2d2d2d; }
+QWidget { color: #e0e0e0; background-color: #2d2d2d; }
+QLabel { color: #e0e0e0; }
+QStatusBar { background-color: #252525; color: #b0b0b0; }

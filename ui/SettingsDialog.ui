@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>395</width>
-    <height>183</height>
+    <width>420</width>
+    <height>480</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,24 +15,359 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QCheckBox" name="use3DAcceleration">
-     <property name="text">
-      <string>Use 3D acceleration for user interface</string>
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="currentIndex">
+      <number>0</number>
      </property>
+     <widget class="QWidget" name="tabGeneral">
+      <attribute name="title">
+       <string>General</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayoutGeneral">
+       <item>
+        <widget class="QGroupBox" name="groupUI">
+         <property name="title">
+          <string>User interface</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayoutUI">
+          <item>
+           <widget class="QCheckBox" name="use3DAcceleration">
+            <property name="text">
+             <string>Use 3D acceleration for user interface</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayoutTheme">
+            <item>
+             <widget class="QLabel" name="colorSchemeLabel">
+              <property name="text">
+               <string>Color scheme:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="colorSchemeBox"/>
+            </item>
+            <item>
+             <spacer name="horizontalSpacerTheme">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="autoSaveProjectCB">
+            <property name="text">
+             <string>Auto-save the existing project</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayoutUnits">
+            <item>
+             <widget class="QLabel" name="unitsLabel">
+              <property name="text">
+               <string>Units:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="unitsBox"/>
+            </item>
+            <item>
+             <spacer name="horizontalSpacerUnits">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayoutThreads">
+            <item>
+             <widget class="QLabel" name="batchThreadsLabel">
+              <property name="text">
+               <string>Batch processing threads (0 = auto):</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="batchThreadCountSB">
+              <property name="minimum">
+               <number>0</number>
+              </property>
+              <property name="maximum">
+               <number>64</number>
+              </property>
+              <property name="value">
+               <number>0</number>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacerThreads">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupDetection">
+         <property name="title">
+          <string>Detection</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayoutDetection">
+          <item>
+           <widget class="QCheckBox" name="blackOnWhiteDetectionCB">
+            <property name="text">
+             <string>Black on white detection (light content on dark background)</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="blackOnWhiteAtOutputCB">
+            <property name="text">
+             <string>Apply at output stage</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tabThumbnails">
+      <attribute name="title">
+       <string>Thumbnails</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayoutThumbs">
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayoutQuality">
+         <item>
+          <widget class="QLabel" name="thumbnailQualityLabel">
+           <property name="text">
+            <string>Quality (pixel size):</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QSpinBox" name="thumbnailQualitySB">
+           <property name="minimum">
+            <number>100</number>
+           </property>
+           <property name="maximum">
+            <number>1500</number>
+           </property>
+           <property name="singleStep">
+            <number>25</number>
+           </property>
+           <property name="value">
+            <number>200</number>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacerQuality">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayoutSize">
+         <item>
+          <widget class="QLabel" name="thumbnailSizeLabel">
+           <property name="text">
+            <string>Max logical size (width):</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QSpinBox" name="thumbnailSizeSB">
+           <property name="minimum">
+            <number>100</number>
+           </property>
+           <property name="maximum">
+            <number>1000</number>
+           </property>
+           <property name="singleStep">
+            <number>10</number>
+           </property>
+           <property name="value">
+            <number>250</number>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacerSize">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="singleColumnThumbnailsCB">
+         <property name="text">
+          <string>Single column thumbnail display</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="highlightDeviationCB">
+         <property name="text">
+          <string>Highlight pages with high deviation (red asterisk)</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="cancelingSelectionQuestionCB">
+         <property name="text">
+          <string>Ask when canceling multi-page selection</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacerThumbs">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tabOutput">
+      <attribute name="title">
+       <string>Output / TIFF</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayoutOutput">
+       <item>
+        <widget class="QGroupBox" name="groupTiff">
+         <property name="title">
+          <string>TIFF compression</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayoutTiff">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayoutTiffBW">
+            <item>
+             <widget class="QLabel" name="tiffBWLabel">
+              <property name="text">
+               <string>B&amp;W compression:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="tiffCompressionBWBox"/>
+            </item>
+            <item>
+             <spacer name="horizontalSpacerTiffBW">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayoutTiffColor">
+            <item>
+             <widget class="QLabel" name="tiffColorLabel">
+              <property name="text">
+               <string>Color compression:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="tiffCompressionColorBox"/>
+            </item>
+            <item>
+             <spacer name="horizontalSpacerTiffColor">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacerOutput">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
     </widget>
-   </item>
-   <item>
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
    </item>
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
@@ -53,32 +388,12 @@
    <signal>accepted()</signal>
    <receiver>SettingsDialog</receiver>
    <slot>accept()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>157</x>
-     <y>274</y>
-    </hint>
-   </hints>
   </connection>
   <connection>
    <sender>buttonBox</sender>
    <signal>rejected()</signal>
    <receiver>SettingsDialog</receiver>
    <slot>reject()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>316</x>
-     <y>260</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>286</x>
-     <y>274</y>
-    </hint>
-   </hints>
   </connection>
  </connections>
 </ui>
