@@ -52,7 +52,8 @@ public:
 	virtual ~OptionsWidget();
 	
 	void preUpdateUI(PageId const& page_id,
-		Margins const& margins_mm, Alignment const& alignment);
+		Margins const& margins_mm, Alignment const& alignment,
+		bool content_low_confidence = false);
 	
 	void postUpdateUI();
 	
@@ -97,10 +98,18 @@ private slots:
 	void applyMargins(std::set<PageId> const& pages);
 	
 	void applyAlignment(std::set<PageId> const& pages);
+	
+	void equalizeLeftRight();
+	void equalizeTopBottom();
+	void marginsPresetApplied(int index);
 private:
 	typedef std::map<QToolButton*, Alignment> AlignmentByButton;
 	
 	void updateMarginsDisplay();
+	
+	void updateMarginsTooltip();
+	
+	void updateMarginsWarningAndEqualize();
 	
 	void updateLinkDisplay(QToolButton* button, bool linked);
 	
@@ -119,6 +128,7 @@ private:
 	int m_ignoreMarginChanges;
 	bool m_leftRightLinked;
 	bool m_topBottomLinked;
+	bool m_contentLowConfidence;
 };
 
 } // namespace page_layout

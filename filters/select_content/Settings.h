@@ -36,6 +36,9 @@ class Settings : public RefCountable
 {
 	DECLARE_NON_COPYABLE(Settings)
 public:
+	/** Text size profile for content detection (adaptive thresholds). */
+	enum TextSizeProfile { TEXT_SIZE_NORMAL = 0, TEXT_SIZE_SMALL = 1, TEXT_SIZE_LARGE = 2 };
+
 	Settings();
 	
 	virtual ~Settings();
@@ -49,11 +52,19 @@ public:
 	void clearPageParams(PageId const& page_id);
 	
 	std::unique_ptr<Params> getPageParams(PageId const& page_id) const;
+
+	bool getTextOnlyMode() const { return m_textOnlyMode; }
+	void setTextOnlyMode(bool v) { m_textOnlyMode = v; }
+
+	TextSizeProfile getTextSizeProfile() const { return m_textSizeProfile; }
+	void setTextSizeProfile(TextSizeProfile v) { m_textSizeProfile = v; }
 private:
 	typedef std::map<PageId, Params> PageParams;
 	
 	mutable QMutex m_mutex;
 	PageParams m_pageParams;
+	bool m_textOnlyMode;
+	TextSizeProfile m_textSizeProfile;
 };
 
 } // namespace select_content

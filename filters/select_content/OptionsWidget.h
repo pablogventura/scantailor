@@ -65,11 +65,15 @@ public:
 		void setMode(AutoManualMode mode);
 		
 		AutoManualMode mode() const;
+
+		void setContentConfidence(double v) { m_contentConfidence = v; }
+		double contentConfidence() const { return m_contentConfidence; }
 	private:
 		QRectF m_contentRect; // In virtual image coordinates.
 		PhysSizeCalc m_sizeCalc;
 		Dependencies m_deps;
 		AutoManualMode m_mode;
+		double m_contentConfidence;
 	};
 	
 	OptionsWidget(IntrusivePtr<Settings> const& settings,
@@ -88,6 +92,9 @@ private slots:
 	void applySelection(std::set<PageId> const& pages);
 
 	void modeChanged(bool auto_mode);
+
+	void textOnlyToggled(bool checked);
+	void textSizeProfileChanged(int index);
 private:
 	void updateModeIndication(AutoManualMode const mode);
 	

@@ -185,6 +185,8 @@ private:
 		QWidget* widget, Ownership ownership,
 		DebugImages* debug_images = 0);
 
+	virtual bool selectContentLowConfidence(PageId const& page_id) const;
+
 	virtual IntrusivePtr<AbstractCommand0<void> > relinkingDialogRequester();
 	
 	void switchToNewProject(

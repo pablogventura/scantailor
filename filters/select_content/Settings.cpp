@@ -28,6 +28,8 @@ namespace select_content
 {
 
 Settings::Settings()
+:	m_textOnlyMode(false),
+	m_textSizeProfile(TEXT_SIZE_NORMAL)
 {
 }
 
@@ -40,6 +42,8 @@ Settings::clear()
 {
 	QMutexLocker locker(&m_mutex);
 	m_pageParams.clear();
+	m_textOnlyMode = false;
+	m_textSizeProfile = TEXT_SIZE_NORMAL;
 }
 
 void

@@ -118,6 +118,8 @@ Filter::saveSettings(
 	using namespace boost::lambda;
 	
 	QDomElement filter_el(doc.createElement("select-content"));
+	filter_el.setAttribute("textOnly", m_ptrSettings->getTextOnlyMode() ? "true" : "false");
+	filter_el.setAttribute("textSizeProfile", QString::number(static_cast<int>(m_ptrSettings->getTextSizeProfile())));
 	writer.enumPages(
 		boost::lambda::bind(
 			&Filter::writePageSettings,
@@ -153,6 +155,17 @@ Filter::loadSettings(ProjectReader const& reader, QDomElement const& filters_el)
 	QDomElement const filter_el(
 		filters_el.namedItem("select-content").toElement()
 	);
+	if (!filter_el.isNull()) {
+		if (filter_el.hasAttribute("textOnly")) {
+			m_ptrSettings->setTextOnlyMode(filter_el.attribute("textOnly") == "true");
+		}
+		if (filter_el.hasAttribute("textSizeProfile")) {
+			int const p = filter_el.attribute("textSizeProfile").toInt();
+			if (p >= 0 && p <= 2) {
+				m_ptrSettings->setTextSizeProfile(static_cast<Settings::TextSizeProfile>(p));
+			}
+		}
+	}
 	
 	QString const page_tag_name("page");
 	QDomNode node(filter_el.firstChild());

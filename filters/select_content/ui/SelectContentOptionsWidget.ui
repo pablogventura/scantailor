@@ -124,6 +124,61 @@
     </widget>
    </item>
    <item>
+    <widget class="QGroupBox" name="detectionGroupBox" >
+     <property name="title" >
+      <string>Detection</string>
+     </property>
+     <layout class="QVBoxLayout" >
+      <item>
+       <widget class="QCheckBox" name="textOnlyCheckBox" >
+        <property name="text" >
+         <string>Exclude images (text only)</string>
+        </property>
+        <property name="checked" >
+         <bool>false</bool>
+        </property>
+        <property name="toolTip" >
+         <string>When enabled, content blocks with low text ratio are excluded from the content box.</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" >
+        <item>
+         <widget class="QLabel" name="textSizeLabel" >
+          <property name="text" >
+           <string>Text size:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="textSizeCombo" >
+          <property name="toolTip" >
+           <string>Adaptive thresholds: Normal, Small text, or Large text.</string>
+          </property>
+          <item>
+           <property name="text" >
+            <string>Normal</string>
+           </property>
+          </item>
+          <item>
+           <property name="text" >
+            <string>Small</string>
+           </property>
+          </item>
+          <item>
+           <property name="text" >
+            <string>Large</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
     <spacer name="verticalSpacer" >
      <property name="orientation" >
       <enum>Qt::Vertical</enum>

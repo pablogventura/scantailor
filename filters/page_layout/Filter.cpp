@@ -123,7 +123,8 @@ Filter::preUpdateUI(FilterUiInterface* ui, PageId const& page_id)
 {
 	Margins const margins_mm(m_ptrSettings->getHardMarginsMM(page_id));
 	Alignment const alignment(m_ptrSettings->getPageAlignment(page_id));
-	m_ptrOptionsWidget->preUpdateUI(page_id, margins_mm, alignment);
+	bool const content_low = ui->selectContentLowConfidence(page_id);
+	m_ptrOptionsWidget->preUpdateUI(page_id, margins_mm, alignment, content_low);
 	ui->setOptionsWidget(m_ptrOptionsWidget.get(), ui->KEEP_OWNERSHIP);
 }
 

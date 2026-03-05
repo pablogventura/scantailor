@@ -27,16 +27,19 @@ namespace select_content
 
 Params::Params(
 	QRectF const& content_rect, QSizeF const& content_size_mm,
-	Dependencies const& deps, AutoManualMode const mode)
+	Dependencies const& deps, AutoManualMode const mode,
+	double const content_confidence)
 :	m_contentRect(content_rect),
 	m_contentSizeMM(content_size_mm),
 	m_deps(deps),
-	m_mode(mode)
+	m_mode(mode),
+	m_contentConfidence(content_confidence)
 {
 }
 
 Params::Params(Dependencies const& deps)
-:	m_deps(deps)
+:	m_deps(deps),
+	m_contentConfidence(1.0)
 {
 }
 
@@ -52,8 +55,17 @@ Params::Params(QDomElement const& filter_el)
 		)
 	),
 	m_deps(filter_el.namedItem("dependencies").toElement()),
-	m_mode(filter_el.attribute("mode") == "manual" ? MODE_MANUAL : MODE_AUTO)
+	m_mode(filter_el.attribute("mode") == "manual" ? MODE_MANUAL : MODE_AUTO),
+	m_contentConfidence(1.0)
 {
+	QString const conf_attr(filter_el.attribute("confidence"));
+	if (!conf_attr.isEmpty()) {
+		bool ok = false;
+		double const c = conf_attr.toDouble(&ok);
+		if (ok && c >= 0.0 && c <= 1.0) {
+			m_contentConfidence = c;
+		}
+	}
 }
 
 Params::~Params()
@@ -67,10 +79,13 @@ Params::toXml(QDomDocument& doc, QString const& name) const
 	
 	QDomElement el(doc.createElement(name));
 	el.setAttribute("mode", m_mode == MODE_AUTO ? "auto" : "manual");
+	if (m_contentConfidence < 1.0) {
+		el.setAttribute("confidence", QString::number(m_contentConfidence, 'f', 3));
+	}
 	el.appendChild(marshaller.rectF(m_contentRect, "content-rect"));
 	el.appendChild(marshaller.sizeF(m_contentSizeMM, "content-size-mm"));
 	el.appendChild(m_deps.toXml(doc, "dependencies"));
 	return el;
 }
 
-} // namespace content_rect
+} // namespace select_content

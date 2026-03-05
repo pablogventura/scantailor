@@ -38,12 +38,21 @@ namespace imageproc
 namespace select_content
 {
 
+struct ContentDetectionOptions
+{
+	bool textOnlyMode;
+	int textSizeProfile; // 0=normal, 1=small, 2=large
+	ContentDetectionOptions() : textOnlyMode(false), textSizeProfile(0) {}
+};
+
 class ContentBoxFinder
 {
 public:
 	static QRectF findContentBox(
 		TaskStatus const& status, FilterData const& data,
-		DebugImages* dbg = 0);
+		DebugImages* dbg = 0,
+		ContentDetectionOptions const* options = nullptr,
+		double* out_confidence = nullptr);
 private:
 	class Garbage;
 	
@@ -60,10 +69,17 @@ private:
 	static void inPlaceRemoveAreasTouchingBorders(
 		imageproc::BinaryImage& content_blocks, DebugImages* dbg);
 	
+	static void inPlaceRemoveLowTextBlocks(
+		imageproc::BinaryImage& content_blocks,
+		imageproc::BinaryImage const& content,
+		imageproc::BinaryImage const& text_mask,
+		double min_text_ratio);
+	
 	static imageproc::BinaryImage estimateTextMask(
 		imageproc::BinaryImage const& content,
 		imageproc::BinaryImage const& content_blocks,
-		DebugImages* dbg);
+		DebugImages* dbg,
+		int text_size_profile = 0);
 	
 	static void filterShadows(
 		TaskStatus const& status, imageproc::BinaryImage& shadows,

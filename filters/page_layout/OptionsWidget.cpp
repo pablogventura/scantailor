@@ -46,7 +46,8 @@ OptionsWidget::OptionsWidget(
 	m_unitToMM(1.0),
 	m_ignoreMarginChanges(0),
 	m_leftRightLinked(true),
-	m_topBottomLinked(true)
+	m_topBottomLinked(true),
+	m_contentLowConfidence(false)
 {
 	{
 		QSettings app_settings;
@@ -143,6 +144,18 @@ OptionsWidget::OptionsWidget(
 		applyAlignmentBtn, SIGNAL(clicked()),
 		this, SLOT(showApplyAlignmentDialog())
 	);
+	connect(
+		equalizeLeftRightBtn, SIGNAL(clicked()),
+		this, SLOT(equalizeLeftRight())
+	);
+	connect(
+		equalizeTopBottomBtn, SIGNAL(clicked()),
+		this, SLOT(equalizeTopBottom())
+	);
+	connect(
+		marginsPresetCombo, SIGNAL(activated(int)),
+		this, SLOT(marginsPresetApplied(int))
+	);
 	
 	typedef AlignmentByButton::value_type KeyVal;
 	for (KeyVal const& kv : m_alignmentByButton) {
@@ -159,11 +172,13 @@ OptionsWidget::~OptionsWidget()
 
 void
 OptionsWidget::preUpdateUI(
-	PageId const& page_id, Margins const& margins_mm, Alignment const& alignment)
+	PageId const& page_id, Margins const& margins_mm, Alignment const& alignment,
+	bool content_low_confidence)
 {
 	m_pageId = page_id;
 	m_marginsMM = margins_mm;
 	m_alignment = alignment;
+	m_contentLowConfidence = content_low_confidence;
 	
 	typedef AlignmentByButton::value_type KeyVal;
 	for (KeyVal const& kv : m_alignmentByButton) {
@@ -194,6 +209,7 @@ OptionsWidget::postUpdateUI()
 {
 	marginsGroup->setEnabled(true);
 	alignmentGroup->setEnabled(true);
+	updateMarginsTooltip();
 }
 
 void
@@ -378,6 +394,133 @@ OptionsWidget::updateMarginsDisplay()
 	bottomMarginSpinBox->setValue(m_marginsMM.bottom() * m_mmToUnit);
 	leftMarginSpinBox->setValue(m_marginsMM.left() * m_mmToUnit);
 	rightMarginSpinBox->setValue(m_marginsMM.right() * m_mmToUnit);
+	updateMarginsTooltip();
+}
+
+void
+OptionsWidget::updateMarginsTooltip()
+{
+	QSettings settings;
+	double const asymmetry_mm = settings.value("marginsWarn/asymmetryMm", 5.0).toDouble();
+	double const min_mm = settings.value("marginsWarn/minMm", 0.5).toDouble();
+	double const max_mm = settings.value("marginsWarn/maxMm", 50.0).toDouble();
+	
+	double const hor_diff = qAbs(m_marginsMM.left() - m_marginsMM.right());
+	double const vert_diff = qAbs(m_marginsMM.top() - m_marginsMM.bottom());
+	double const min_m = qMin(qMin(m_marginsMM.left(), m_marginsMM.right()),
+	                          qMin(m_marginsMM.top(), m_marginsMM.bottom()));
+	double const max_m = qMax(qMax(m_marginsMM.left(), m_marginsMM.right()),
+	                         qMax(m_marginsMM.top(), m_marginsMM.bottom()));
+	bool const asymmetric = (hor_diff > asymmetry_mm || vert_diff > asymmetry_mm);
+	bool const extreme = (min_m < min_mm || max_m > max_mm);
+	QString msg;
+	if (asymmetric || extreme) {
+		if (asymmetric && extreme) {
+			msg = tr("Margins are asymmetric (left/right or top/bottom differ by more than %1 mm) and some values are very small or very large. Verify if intended.").arg(asymmetry_mm, 0, 'f', 1);
+		} else if (asymmetric) {
+			msg = tr("Margins are asymmetric (left/right or top/bottom differ by more than %1 mm). Verify if intended.").arg(asymmetry_mm, 0, 'f', 1);
+		} else {
+			msg = tr("Some margins are very small (< %1 mm) or very large (> %2 mm). Verify if intended.").arg(min_mm, 0, 'f', 1).arg(max_mm, 0, 'f', 1);
+		}
+		if (m_contentLowConfidence) {
+			msg += QChar('\n');
+			msg += tr("Content detection was uncertain; consider reviewing margins too.");
+		}
+		marginsGroup->setToolTip(msg);
+	} else if (m_contentLowConfidence) {
+		msg = tr("Content detection was uncertain; consider reviewing margins too.");
+		marginsGroup->setToolTip(msg);
+	} else {
+		marginsGroup->setToolTip(QString());
+	}
+	updateMarginsWarningAndEqualize();
+}
+
+void
+OptionsWidget::updateMarginsWarningAndEqualize()
+{
+	QSettings settings;
+	double const asymmetry_mm = settings.value("marginsWarn/asymmetryMm", 5.0).toDouble();
+	double const min_mm = settings.value("marginsWarn/minMm", 0.5).toDouble();
+	double const max_mm = settings.value("marginsWarn/maxMm", 50.0).toDouble();
+	
+	double const hor_diff = qAbs(m_marginsMM.left() - m_marginsMM.right());
+	double const vert_diff = qAbs(m_marginsMM.top() - m_marginsMM.bottom());
+	double const min_m = qMin(qMin(m_marginsMM.left(), m_marginsMM.right()),
+	                          qMin(m_marginsMM.top(), m_marginsMM.bottom()));
+	double const max_m = qMax(qMax(m_marginsMM.left(), m_marginsMM.right()),
+	                         qMax(m_marginsMM.top(), m_marginsMM.bottom()));
+	bool const asymmetric = (hor_diff > asymmetry_mm || vert_diff > asymmetry_mm);
+	bool const extreme = (min_m < min_mm || max_m > max_mm);
+	bool const show_warning = asymmetric || extreme || m_contentLowConfidence;
+	
+	marginsWarningLabel->setVisible(show_warning);
+	if (show_warning) {
+		QString text;
+		if (m_contentLowConfidence && (asymmetric || extreme))
+			text = tr("⚠ Check margins (content detection was uncertain)");
+		else if (m_contentLowConfidence)
+			text = tr("⚠ Content detection was uncertain");
+		else
+			text = tr("⚠ Check margins");
+		marginsWarningLabel->setText(text);
+	}
+	equalizeLeftRightBtn->setEnabled(hor_diff > asymmetry_mm);
+	equalizeTopBottomBtn->setEnabled(vert_diff > asymmetry_mm);
+}
+
+void
+OptionsWidget::equalizeLeftRight()
+{
+	double const v = qMin(m_marginsMM.left(), m_marginsMM.right());
+	m_marginsMM.setLeft(v);
+	m_marginsMM.setRight(v);
+	m_leftRightLinked = true;
+	updateLinkDisplay(leftRightLink, true);
+	updateMarginsDisplay();
+	emit marginsSetLocally(m_marginsMM);
+	emit aggregateHardSizeChanged();
+}
+
+void
+OptionsWidget::equalizeTopBottom()
+{
+	double const v = qMin(m_marginsMM.top(), m_marginsMM.bottom());
+	m_marginsMM.setTop(v);
+	m_marginsMM.setBottom(v);
+	m_topBottomLinked = true;
+	updateLinkDisplay(topBottomLink, true);
+	updateMarginsDisplay();
+	emit marginsSetLocally(m_marginsMM);
+	emit aggregateHardSizeChanged();
+}
+
+void
+OptionsWidget::marginsPresetApplied(int index)
+{
+	if (index <= 0) return;
+	Margins new_margins;
+	if (index == 1) {
+		new_margins = Margins(10.0, 5.0, 10.0, 5.0);
+	} else if (index == 2) {
+		new_margins = Margins(2.0, 2.0, 2.0, 2.0);
+	} else if (index == 3) {
+		double const lr = qMin(m_marginsMM.left(), m_marginsMM.right());
+		double const tb = qMin(m_marginsMM.top(), m_marginsMM.bottom());
+		new_margins = Margins(lr, tb, lr, tb);
+	} else {
+		marginsPresetCombo->setCurrentIndex(0);
+		return;
+	}
+	m_marginsMM = new_margins;
+	m_leftRightLinked = (m_marginsMM.left() == m_marginsMM.right());
+	m_topBottomLinked = (m_marginsMM.top() == m_marginsMM.bottom());
+	updateLinkDisplay(leftRightLink, m_leftRightLinked);
+	updateLinkDisplay(topBottomLink, m_topBottomLinked);
+	updateMarginsDisplay();
+	emit marginsSetLocally(m_marginsMM);
+	emit aggregateHardSizeChanged();
+	marginsPresetCombo->setCurrentIndex(0);
 }
 
 void

@@ -37,7 +37,8 @@ public:
 	// Member-wise copying is OK.
 	
 	Params(QRectF const& rect, QSizeF const& size_mm,
-		Dependencies const& deps, AutoManualMode mode);
+		Dependencies const& deps, AutoManualMode mode,
+		double content_confidence = 1.0);
 	
 	Params(Dependencies const& deps);
 	
@@ -52,6 +53,9 @@ public:
 	Dependencies const& dependencies() const { return m_deps; }
 	
 	AutoManualMode mode() const { return m_mode; }
+
+	double contentConfidence() const { return m_contentConfidence; }
+	bool isLowConfidence() const { return m_contentConfidence >= 0.0 && m_contentConfidence < 0.5; }
 	
 	QDomElement toXml(QDomDocument& doc, QString const& name) const;
 private:
@@ -59,6 +63,7 @@ private:
 	QSizeF m_contentSizeMM;
 	Dependencies m_deps;
 	AutoManualMode m_mode;
+	double m_contentConfidence;
 };
 
 } // namespace select_content

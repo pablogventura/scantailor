@@ -49,6 +49,12 @@ public:
 	virtual void invalidateAllThumbnails() = 0;
 
 	/**
+	 * Returns true if the given page had low-confidence content detection
+	 * (Select Content stage). Used by Page Layout to show an extra warning.
+	 */
+	virtual bool selectContentLowConfidence(PageId const& page_id) const = 0;
+
+	/**
 	 * Returns a callable object that when called will open a relinking dialog.
 	 */
 	virtual IntrusivePtr<AbstractCommand0<void> > relinkingDialogRequester() = 0;

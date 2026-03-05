@@ -113,8 +113,10 @@ struct PreferVertical
 
 QRectF
 ContentBoxFinder::findContentBox(
-	TaskStatus const& status, FilterData const& data, DebugImages* dbg)
+	TaskStatus const& status, FilterData const& data, DebugImages* dbg,
+	ContentDetectionOptions const* options, double* out_confidence)
 {
+	ContentDetectionOptions const opts(options ? *options : ContentDetectionOptions());
 	ImageTransformation xform_150dpi(data.xform());
 	xform_150dpi.preScaleToDpi(Dpi(150, 150));
 
@@ -200,6 +202,16 @@ ContentBoxFinder::findContentBox(
 	filterShadows(status, garbage, dbg);
 	if (dbg) {
 		dbg->add(garbage, "filtered_shadows");
+	}
+	
+	// Do not subtract as shadow any region that overlaps text (UEPs).
+	{
+		BinaryImage const ueps(
+			SEDM(bw150, SEDM::DIST_TO_BLACK, SEDM::DIST_TO_NO_BORDERS)
+			.findPeaksDestructive()
+		);
+		BinaryImage ueps_dilated(dilateBrick(ueps, QSize(3, 3)));
+		rasterOp<RopSubtract<RopDst, RopSrc> >(garbage, ueps_dilated);
 	}
 	
 	status.throwIfCancelled();
@@ -309,7 +321,7 @@ ContentBoxFinder::findContentBox(
 		dbg->add(content_blocks, "except_bordering");
 	}
 	
-	BinaryImage text_mask(estimateTextMask(content, content_blocks, dbg));
+	BinaryImage text_mask(estimateTextMask(content, content_blocks, dbg, opts.textSizeProfile));
 	if (dbg) {
 		QImage text_mask_visualized(content.size(), QImage::Format_ARGB32_Premultiplied);
 		text_mask_visualized.fill(0xffffffff); // Opaque white.
@@ -332,6 +344,13 @@ ContentBoxFinder::findContentBox(
 	
 	// Make text_mask store the actual content pixels that are text.
 	rasterOp<RopAnd<RopSrc, RopDst> >(text_mask, content);
+	
+	if (opts.textOnlyMode) {
+		inPlaceRemoveLowTextBlocks(content_blocks, content, text_mask, 0.2);
+		if (dbg) {
+			dbg->add(content_blocks, "content_blocks_text_only");
+		}
+	}
 	
 	QRect content_rect(content_blocks.contentBoundingBox());
 	
@@ -435,6 +454,15 @@ ContentBoxFinder::findContentBox(
 			content_rect = QRect();
 			break;
 		}
+	}
+	
+	// Confidence: ratio of text to content in the final box (low = many images/noise).
+	if (out_confidence) {
+		int const content_px = content.countBlackPixels(content_rect);
+		int const text_px = text_mask.countBlackPixels(content_rect);
+		*out_confidence = (content_px > 0)
+			? std::min(1.0, static_cast<double>(text_px) / content_px)
+			: 1.0;
 	}
 	
 	// Transform back from 150dpi.
@@ -650,6 +678,42 @@ ContentBoxFinder::inPlaceRemoveAreasTouchingBorders(
 }
 
 void
+ContentBoxFinder::inPlaceRemoveLowTextBlocks(
+	imageproc::BinaryImage& content_blocks,
+	imageproc::BinaryImage const& content,
+	imageproc::BinaryImage const& text_mask,
+	double min_text_ratio)
+{
+	BinaryImage const content_blocks_copy(content_blocks);
+	ConnCompEraserExt eraser(content_blocks_copy, CONN4);
+	for (;;) {
+		ConnComp const cc(eraser.nextConnComp());
+		if (cc.isNull()) {
+			break;
+		}
+		BinaryImage cc_img(eraser.computeConnCompImage());
+		QRect const r(cc.rect());
+		BinaryImage content_roi(r.size());
+		rasterOp<RopSrc>(content_roi, content_roi.rect(), content, r.topLeft());
+		rasterOp<RopAnd<RopSrc, RopDst> >(content_roi, cc_img);
+		BinaryImage text_roi(r.size());
+		rasterOp<RopSrc>(text_roi, text_roi.rect(), text_mask, r.topLeft());
+		rasterOp<RopAnd<RopSrc, RopDst> >(text_roi, cc_img);
+		int const content_px = content_roi.countBlackPixels();
+		int const text_px = text_roi.countBlackPixels();
+		double const ratio = (content_px > 0) ? static_cast<double>(text_px) / content_px : 0.0;
+		if (ratio < min_text_ratio) {
+			BinaryImage inv_cc(cc_img.size());
+			rasterOp<RopNot<RopSrc> >(inv_cc, cc_img);
+			BinaryImage roi(r.size());
+			rasterOp<RopSrc>(roi, roi.rect(), content_blocks, r.topLeft());
+			rasterOp<RopAnd<RopSrc, RopDst> >(roi, inv_cc);
+			rasterOp<RopSrc>(content_blocks, r, roi, QPoint(0, 0));
+		}
+	}
+}
+
+void
 ContentBoxFinder::segmentGarbage(
 	imageproc::BinaryImage const& garbage,
 	imageproc::BinaryImage& hor_garbage,
@@ -731,7 +795,8 @@ imageproc::BinaryImage
 ContentBoxFinder::estimateTextMask(
 	imageproc::BinaryImage const& content,
 	imageproc::BinaryImage const& content_blocks,
-	DebugImages* dbg)
+	DebugImages* dbg,
+	int text_size_profile)
 {
 	// We differentiate between a text line and a slightly skewed straight
 	// line (which may have a fill factor similar to that of text) by the
@@ -763,7 +828,9 @@ ContentBoxFinder::estimateTextMask(
 	
 	BinaryImage text_mask(content.size(), WHITE);
 	
-	int const min_text_height = 6;
+	// Adaptive min line height: small text=4, normal=6, large=8
+	int const min_text_height = (text_size_profile == 1) ? 4 : (text_size_profile == 2) ? 8 : 6;
+	double const ueps_scale = (text_size_profile == 1) ? 0.7 : (text_size_profile == 2) ? 1.2 : 1.0;
 	
 	ConnCompEraserExt eraser(content_blocks, CONN4);
 	for (;;) {
@@ -862,7 +929,7 @@ ContentBoxFinder::estimateTextMask(
 			}
 		}
 		
-		for (Range const range : ranges) {
+		for (Range const& range : ranges) {
 			int const first = range.first - &hist[0];
 			int const last = range.second - &hist[0];
 			if (last - first < min_text_height - 1) {
@@ -939,7 +1006,7 @@ ContentBoxFinder::estimateTextMask(
 			line_rect.setBottom(cc.rect().top() + bottom);
 			
 			// Check if there are enough ultimate eroded points on the line.
-			int ueps_todo = int(0.4 * line_rect.width() / line_rect.height());
+			int ueps_todo = int(0.4 * ueps_scale * line_rect.width() / line_rect.height());
 			if (ueps_todo) {
 				BinaryImage line_ueps(line_rect.size());
 				rasterOp<RopSrc>(line_ueps, line_ueps.rect(), content_blocks, line_rect.topLeft());

@@ -75,6 +75,8 @@
 #include "filters/deskew/Task.h"
 #include "filters/deskew/CacheDrivenTask.h"
 #include "filters/select_content/Filter.h"
+#include "filters/select_content/Params.h"
+#include "filters/select_content/Settings.h"
 #include "filters/select_content/Task.h"
 #include "filters/select_content/CacheDrivenTask.h"
 #include "filters/page_layout/Filter.h"
@@ -831,6 +833,18 @@ void
 MainWindow::invalidateAllThumbnails()
 {
 	m_ptrThumbSequence->invalidateAllThumbnails();
+}
+
+bool
+MainWindow::selectContentLowConfidence(PageId const& page_id) const
+{
+	if (!m_ptrStages.get()) {
+		return false;
+	}
+	std::unique_ptr<select_content::Params> params(
+		m_ptrStages->selectContentFilter()->getSettings()->getPageParams(page_id)
+	);
+	return params.get() && params->isLowConfidence();
 }
 
 IntrusivePtr<AbstractCommand0<void> >

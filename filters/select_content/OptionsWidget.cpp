@@ -38,6 +38,8 @@ OptionsWidget::OptionsWidget(
 	
 	connect(autoBtn, SIGNAL(toggled(bool)), this, SLOT(modeChanged(bool)));
 	connect(applyToBtn, SIGNAL(clicked()), this, SLOT(showApplyToDialog()));
+	connect(textOnlyCheckBox, SIGNAL(toggled(bool)), this, SLOT(textOnlyToggled(bool)));
+	connect(textSizeCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(textSizeProfileChanged(int)));
 }
 
 OptionsWidget::~OptionsWidget()
@@ -53,6 +55,8 @@ OptionsWidget::preUpdateUI(PageId const& page_id)
 	autoBtn->setChecked(true);
 	autoBtn->setEnabled(false);
 	manualBtn->setEnabled(false);
+	textOnlyCheckBox->setChecked(m_ptrSettings->getTextOnlyMode());
+	textSizeCombo->setCurrentIndex(static_cast<int>(m_ptrSettings->getTextSizeProfile()));
 }
 
 void
@@ -62,6 +66,11 @@ OptionsWidget::postUpdateUI(UiData const& ui_data)
 	updateModeIndication(ui_data.mode());
 	autoBtn->setEnabled(true);
 	manualBtn->setEnabled(true);
+	if (ui_data.mode() == MODE_AUTO && ui_data.contentConfidence() < 0.5) {
+		groupBox->setToolTip(tr("Content was auto-detected with low confidence (e.g. many images or noise). Please verify the crop."));
+	} else {
+		groupBox->setToolTip(QString());
+	}
 }
 
 void
@@ -93,6 +102,20 @@ OptionsWidget::modeChanged(bool const auto_mode)
 }
 
 void
+OptionsWidget::textOnlyToggled(bool checked)
+{
+	m_ptrSettings->setTextOnlyMode(checked);
+}
+
+void
+OptionsWidget::textSizeProfileChanged(int index)
+{
+	if (index >= 0 && index <= 2) {
+		m_ptrSettings->setTextSizeProfile(static_cast<Settings::TextSizeProfile>(index));
+	}
+}
+
+void
 OptionsWidget::updateModeIndication(AutoManualMode const mode)
 {
 	ScopedIncDec<int> guard(m_ignoreAutoManualToggle);
@@ -109,7 +132,8 @@ OptionsWidget::commitCurrentParams()
 {
 	Params const params(
 		m_uiData.contentRect(), m_uiData.contentSizeMM(),
-		m_uiData.dependencies(), m_uiData.mode()
+		m_uiData.dependencies(), m_uiData.mode(),
+		m_uiData.contentConfidence()
 	);
 	m_ptrSettings->setPageParams(m_pageId, params);
 }
@@ -137,7 +161,8 @@ OptionsWidget::applySelection(std::set<PageId> const& pages)
 	
 	Params const params(
 		m_uiData.contentRect(), m_uiData.contentSizeMM(),
-		m_uiData.dependencies(), m_uiData.mode()
+		m_uiData.dependencies(), m_uiData.mode(),
+		m_uiData.contentConfidence()
 	);
 
 	for (PageId const& page_id : pages) {
@@ -149,7 +174,8 @@ OptionsWidget::applySelection(std::set<PageId> const& pages)
 /*========================= OptionsWidget::UiData ======================*/
 
 OptionsWidget::UiData::UiData()
-:	m_mode(MODE_AUTO)
+:	m_mode(MODE_AUTO),
+	m_contentConfidence(1.0)
 {
 }
 

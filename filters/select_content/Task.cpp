@@ -103,6 +103,7 @@ Task::process(TaskStatus const& status, FilterData const& data)
 		ui_data.setContentRect(params->contentRect());
 		ui_data.setDependencies(deps);
 		ui_data.setMode(params->mode());
+		ui_data.setContentConfidence(params->contentConfidence());
 
 		if (!params->dependencies().matches(deps)) {
 			QRectF content_rect = ui_data.contentRect();
@@ -117,22 +118,27 @@ Task::process(TaskStatus const& status, FilterData const& data)
 			// Backwards compatibility: put the missing data where it belongs.
 			Params const new_params(
 				ui_data.contentRect(), ui_data.contentSizeMM(),
-				deps, params->mode()
+				deps, params->mode(), params->contentConfidence()
 			);
 			m_ptrSettings->setPageParams(m_pageId, new_params);
 		}
 	} else {
+		ContentDetectionOptions opts;
+		opts.textOnlyMode = m_ptrSettings->getTextOnlyMode();
+		opts.textSizeProfile = static_cast<int>(m_ptrSettings->getTextSizeProfile());
+		double confidence = 1.0;
 		QRectF const content_rect(
 			ContentBoxFinder::findContentBox(
-				status, data, m_ptrDbg.get()
+				status, data, m_ptrDbg.get(), &opts, &confidence
 			)
 		);
 		ui_data.setContentRect(content_rect);
 		ui_data.setDependencies(deps);
 		ui_data.setMode(MODE_AUTO);
+		ui_data.setContentConfidence(confidence);
 
 		Params const new_params(
-			ui_data.contentRect(), ui_data.contentSizeMM(), deps, MODE_AUTO
+			ui_data.contentRect(), ui_data.contentSizeMM(), deps, MODE_AUTO, confidence
 		);
 		m_ptrSettings->setPageParams(m_pageId, new_params);
 	}
