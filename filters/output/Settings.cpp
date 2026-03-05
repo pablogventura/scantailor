@@ -120,6 +120,13 @@ Settings::getParams(PageId const& page_id) const
 	return p;
 }
 
+bool
+Settings::hasPageParams(PageId const& page_id) const
+{
+	QMutexLocker const locker(&m_mutex);
+	return m_perPageParams.find(page_id) != m_perPageParams.end();
+}
+
 void
 Settings::setParams(PageId const& page_id, Params const& params)
 {

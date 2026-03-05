@@ -55,6 +55,9 @@ public:
 	void performRelinking(AbstractRelinker const& relinker);
 	
 	Params getParams(PageId const& page_id) const;
+
+	/** \return true if this page has per-page params (not just default). */
+	bool hasPageParams(PageId const& page_id) const;
 	
 	void setParams(PageId const& page_id, Params const& params);
 

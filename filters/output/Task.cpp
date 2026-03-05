@@ -161,6 +161,16 @@ Task::process(
 	status.throwIfCancelled();
 
 	Params params(m_ptrSettings->getParams(m_pageId));
+	// For pages without saved params (e.g. first run, or covers), use suggested
+	// color so full-page images don't default to B&W.
+	if (!m_ptrSettings->hasPageParams(m_pageId) && CommandLine::get().isGui()
+	    && !data.origImage().isNull()) {
+		ColorParams::ColorMode const suggested = OutputSuggestions::suggestColorMode(
+			data.origImage(), data.origImage().rect());
+		ColorParams cp(params.colorParams());
+		cp.setColorMode(suggested);
+		params.setColorParams(cp);
+	}
 	RenderParams const render_params(params.colorParams());
 	QString const out_file_path(m_outFileNameGen.filePathFor(m_pageId, params.outputFormat()));
 	QFileInfo const out_file_info(out_file_path);

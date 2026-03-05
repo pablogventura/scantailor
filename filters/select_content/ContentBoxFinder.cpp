@@ -456,8 +456,18 @@ ContentBoxFinder::findContentBox(
 		}
 	}
 	
-	// Confidence: ratio of text to content in the final box (low = many images/noise).
-	if (out_confidence) {
+	// Fallback for full-page images (e.g. covers, illustrations): if detection
+	// produced an empty or very small box, the page is likely not text-based.
+	// Use the full page so we don't over-crop.
+	int const full_area = content.width() * content.height();
+	int const content_area = content_rect.width() * content_rect.height();
+	double const min_content_ratio = 0.15;  // at least 15% of page
+	if (content_rect.isEmpty() || (full_area > 0 && content_area < min_content_ratio * full_area)) {
+		content_rect = QRect(0, 0, content.width(), content.height());
+		if (out_confidence) {
+			*out_confidence = 0.0;  // signal "fallback used, please verify"
+		}
+	} else if (out_confidence) {
 		int const content_px = content.countBlackPixels(content_rect);
 		int const text_px = text_mask.countBlackPixels(content_rect);
 		*out_confidence = (content_px > 0)
